@@ -1,0 +1,7 @@
+# ensomi-web
+
+Static site for https://ensomi.app: the Ensomi R2 demo page. Plain HTML and CSS in `public/`, deployed as Cloudflare Workers static assets (`wrangler.jsonc`).
+
+Deploy: `wrangler deploy` from the repository root, logged in to the Cloudflare account that holds `ensomi.app`.
+
+Site content is released under CC BY-NC-SA 4.0 like the R2 model card it summarises. The Ensomi icon is from the Ensomi app.

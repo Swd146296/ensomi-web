@@ -146,10 +146,13 @@ repository's soxr installation; it does not consume song data.
 - `assets/`: FIR coefficients; `artifacts/`: parity and diagnostic reports.
 
 The page in `../../site` bundles this package with esbuild and runs generation
-in a Web Worker. Default loading chooses WebGPU plus WASM when `navigator.gpu`
-exists, otherwise WASM (`onnxruntime-web/wasm`); `backend` overrides the
-choice. ONNX Runtime handles operator placement; there is no runtime retry
-layer. The resampler assets under `assets/` are fetched only for raw PCM without
+in a Web Worker. Default loading chooses WebGPU when `navigator.gpu` exists,
+otherwise WASM (`onnxruntime-web/wasm`); `backend` overrides the choice. With
+WebGPU only BeatThis uses it (`GPU_GRAPHS` in `src/models.ts`): the rows and R2
+graphs run once per beat or head row on small inputs, where WebGPU's per-call
+transfers cost more than the CPU. `loadModels` downloads all files at once and
+releases the sessions it created if loading fails; the page retries a failed
+WebGPU load on WASM. `models.array` reads each array once. The resampler assets under `assets/` are fetched only for raw PCM without
 the two frontend streams; `decodeAudio` supplies both, so the page never
 fetches them.
 

@@ -42,38 +42,61 @@ export function resample(pcm: Float64Array, kernel: Resampler): Float32Array {
     }
     return out;
 }
+/** Lets queued tasks run, such as a WebGPU result another computation is waiting for. */
+const pause = () => new Promise<void>(resolve => {
+    const channel = new MessageChannel();
+    channel.port1.onmessage = () => {
+        channel.port1.close();
+        resolve();
+    };
+    channel.port2.postMessage(null);
+});
+/** Pauses every 64 frames, so the spectrogram can run alongside a network on the GPU. */
 export async function spectrogram(pcm: Float32Array, models: Models, kind: 'beatthis' | 'rows'): Promise<Float32Array> {
     const arrays = models.manifest.frontend_arrays[kind];
     const window = await models.array(arrays.hann_window) as Float32Array;
     const filter = await models.array(arrays.mel_filter) as Float32Array;
-    const n = window.length, bins = n / 2 + 1, hop = kind === 'beatthis' ? 441 : 240;
-    const frames = kind === 'beatthis' ? 1 + Math.floor(pcm.length / hop) : Math.ceil(pcm.length / hop);
+    const beatthis = kind === 'beatthis', n = window.length, bins = n / 2 + 1, hop = beatthis ? 441 : 240, scale = beatthis ? 1 / 32 : 1;
+    const frames = beatthis ? 1 + Math.floor(pcm.length / hop) : Math.ceil(pcm.length / hop);
     const out = new Float32Array(frames * 128), input = new Float64Array(n), fft = new FFT(n), power = new Float32Array(bins);
-    // Only nonzero Mel weights contribute. Preserve ascending FFT-bin reduction order.
-    const weights = Array.from({ length: 128 }, (_, m) => Array.from({ length: bins }, (_, k) => [k, filter[kind === 'beatthis' ? k * 128 + m : m * bins + k]]).filter(x => x[1] !== 0));
+    // Only nonzero Mel weights contribute, in ascending FFT-bin order: band m sums entries ends[m] to ends[m + 1].
+    const ends = new Int32Array(129), binList: number[] = [], weightList: number[] = [];
+    for (let m = 0; m < 128; m++) {
+        for (let k = 0; k < bins; k++) {
+            const w = filter[beatthis ? k * 128 + m : m * bins + k];
+            if (w !== 0) {
+                binList.push(k);
+                weightList.push(w);
+            }
+        }
+        ends[m + 1] = binList.length;
+    }
+    const weightBins = Int32Array.from(binList), weights = Float32Array.from(weightList);
     for (let f = 0; f < frames; f++) {
-        const start = f * hop - (kind === 'beatthis' ? n / 2 : 0);
+        if (f % 64 === 63)
+            await pause();
+        const start = f * hop - (beatthis ? n / 2 : 0);
         for (let j = 0; j < n; j++) {
             let i = start + j;
-            if (kind === 'beatthis') {
+            if (beatthis) {
                 if (i < 0)
                     i = -i;
                 if (i >= pcm.length)
                     i = 2 * pcm.length - 2 - i;
             }
-            input[j] = f32((pcm[i] ?? 0) * window[j]);
+            input[j] = i >= 0 && i < pcm.length ? f32(pcm[i] * window[j]) : 0;
         }
         fft.run(input);
         for (let k = 0; k < bins; k++) {
-            const re = f32(fft.re[k] * (kind === 'beatthis' ? 1 / 32 : 1)), im = f32(fft.im[k] * (kind === 'beatthis' ? 1 / 32 : 1));
+            const re = f32(fft.re[k] * scale), im = f32(fft.im[k] * scale);
             const mag = f32(Math.sqrt(f32(f32(re * re) + f32(im * im))));
-            power[k] = kind === 'beatthis' ? mag : f32(mag * mag);
+            power[k] = beatthis ? mag : f32(mag * mag);
         }
         for (let m = 0; m < 128; m++) {
             let v = 0;
-            for (const [k, w] of weights[m])
-                v += power[k] * w;
-            out[f * 128 + m] = kind === 'beatthis' ? Math.log1p(f32(1000 * f32(v))) : Math.log(Math.max(f32(v), 1e-5));
+            for (let e = ends[m]; e < ends[m + 1]; e++)
+                v += power[weightBins[e]] * weights[e];
+            out[f * 128 + m] = beatthis ? Math.log1p(f32(1000 * f32(v))) : Math.log(Math.max(f32(v), 1e-5));
         }
     }
     return out;

@@ -21,7 +21,8 @@ createServer((request, response) => {
         response.writeHead(404).end('Not found');
         return;
     }
-    response.writeHead(200, { 'Content-Type': types[extname(file)] ?? 'application/octet-stream' });
+    // The same cross-origin isolation as public/_headers, so WebAssembly threads work locally.
+    response.writeHead(200, { 'Content-Type': types[extname(file)] ?? 'application/octet-stream', 'Cross-Origin-Opener-Policy': 'same-origin', 'Cross-Origin-Embedder-Policy': 'credentialless' });
     createReadStream(file).pipe(response);
 }).listen(port, '127.0.0.1', () => {
     console.log(`http://127.0.0.1:${port}/` + (model ? `?model=/model/onnx/  (model directory: ${model})` : ''));

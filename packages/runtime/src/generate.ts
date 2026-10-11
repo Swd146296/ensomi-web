@@ -23,16 +23,17 @@ function validate(pcm: PCM, sampleRate: number, request: GenerateChartRequest): 
     const audio = pcm instanceof Float32Array || pcm instanceof Float64Array ? { samples: pcm, channels: 1 } : pcm;
     if (!Number.isFinite(sampleRate) || sampleRate <= 0 || !Number.isInteger(audio.channels) || audio.channels < 1 || !audio.samples.length || audio.samples.length % audio.channels)
         throw new Error('PCM needs nonempty interleaved samples, a positive sample rate and a channel count');
-    for (const x of audio.samples)
-        if (!Number.isFinite(x))
-            throw new Error('PCM samples must be finite');
+    const finite = (a: ArrayLike<number>) => { for (let i = 0; i < a.length; i++)
+        if (!Number.isFinite(a[i]))
+            return false; return true; };
+    if (!finite(audio.samples))
+        throw new Error('PCM samples must be finite');
     for (const stream of [audio.mel, audio.beatthis])
-        if (stream) {
+        if (stream && stream !== audio.samples) {
             if (!stream.length)
                 throw new Error('Frontend PCM must be nonempty');
-            for (const x of stream)
-                if (!Number.isFinite(x))
-                    throw new Error('Frontend PCM samples must be finite');
+            if (!finite(stream))
+                throw new Error('Frontend PCM samples must be finite');
         }
     const duration = audio.samples.length / audio.channels / sampleRate * 1000;
     if (duration < 3000)
@@ -83,10 +84,11 @@ export async function generateChart(models: Models, pcm: PCM, sampleRate: number
     const spect = await spectrogram(beatPcm, models, 'beatthis');
     seconds.spectrogram = (performance.now() - start) / 1000;
     start = performance.now();
-    const acts = await beatActivations(spect, models);
-    seconds.beatthis = (performance.now() - start) / 1000;
-    start = performance.now();
-    const logMel = await spectrogram(rowsPcm, models, 'rows'), feats = features(logMel, acts.beatProbability, acts.downbeatProbability);
+    // The Log-Mel spectrogram needs nothing from BeatThis, so it is computed while BeatThis runs on the GPU.
+    const beat = beatActivations(spect, models).then(acts => { seconds.beatthis = (performance.now() - start) / 1000; return acts; });
+    const [acts, logMel] = await Promise.all([beat, spectrogram(rowsPcm, models, 'rows')]);
+    start += seconds.beatthis * 1000;
+    const feats = features(logMel, acts.beatProbability, acts.downbeatProbability);
     seconds.mel = (performance.now() - start) / 1000;
     start = performance.now();
     const segments = fitGrid(acts.beat, acts.downbeat, logMel, songMs, models.manifest.grid_fitter), corrected = correctedGrid(segments, songMs), grid = new Grid(corrected);

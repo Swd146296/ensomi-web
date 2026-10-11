@@ -1,4 +1,4 @@
-import { arrayFromBytes, tensorType, type ArraySpec } from './binary.js';
+import { arrayFromBytes, tensorType, type ArraySpec, type NumericArray } from './binary.js';
 import { capabilities } from './capabilities.js';
 import { runtimeAssetSource } from './runtime_assets.js';
 import type * as ORT from 'onnxruntime-web';
@@ -61,12 +61,26 @@ export function localFilesSource(files: Iterable<File>): FileSource {
         return new Uint8Array(await file.arrayBuffer());
     };
 }
+/** Graphs that use WebGPU when it is available. The other graphs run once per beat or head row on small
+ * inputs, where WebGPU's per-call transfers cost more than computing on the CPU. */
+const GPU_GRAPHS = new Set(['beatthis']);
 export class Models {
     readonly capabilities;
+    private readonly arrays = new Map<string, Promise<NumericArray>>();
     constructor(readonly manifest: Manifest, readonly ort: Ort, readonly sessions: Record<string, ORT.InferenceSession>, readonly source: FileSource, readonly runtimeSource: FileSource = runtimeAssetSource) {
         this.capabilities = capabilities(Object.values(manifest.graphs).map(g => g.file));
     }
-    async array(spec: ArraySpec) { return arrayFromBytes(await this.source((spec.file ?? spec.path)!), spec.dtype); }
+    /** Reads an array once; later calls share it, so callers must not modify it. */
+    array(spec: ArraySpec): Promise<NumericArray> {
+        const path = (spec.file ?? spec.path)!;
+        let array = this.arrays.get(path);
+        if (!array) {
+            array = this.source(path).then(bytes => arrayFromBytes(bytes, spec.dtype));
+            array.catch(() => this.arrays.delete(path));
+            this.arrays.set(path, array);
+        }
+        return array;
+    }
     async tensor(spec: ArraySpec) { return new this.ort.Tensor(tensorType(spec.dtype) as ORT.Tensor.Type, await this.array(spec) as any, spec.shape); }
     run(name: string, feeds: Record<string, ORT.Tensor>) { return this.sessions[name].run(feeds); }
     async dispose() { for (const session of Object.values(this.sessions))
@@ -91,9 +105,22 @@ export async function loadModels(source: FileSource | string, options: {
     const ort = options.ort ?? (backend === 'webgpu' ? await import('onnxruntime-web/webgpu') : await import('onnxruntime-web/wasm'));
     if (options.wasm)
         Object.assign(ort.env.wasm, options.wasm);
-    const sessions: Record<string, ORT.InferenceSession> = {};
-    for (const [name, graph] of Object.entries(manifest.graphs)) {
-        sessions[name] = await ort.InferenceSession.create(await read(graph.file), options.session ?? { executionProviders: backend === 'webgpu' ? ['webgpu', 'wasm'] : ['wasm'] });
+    const models = new Models(manifest, ort, {}, read, options.runtimeSource);
+    // All files download at once, with the Mel filters, windows and R2 initial state that generation reads first.
+    // Sessions are created in order, each as soon as its file has arrived.
+    const graphs = Object.entries(manifest.graphs), reads = graphs.map(([, graph]) => read(graph.file));
+    const create = (async () => {
+        for (const [i, [name]] of graphs.entries())
+            models.sessions[name] = await ort.InferenceSession.create(await reads[i], options.session ?? { executionProviders: backend === 'webgpu' && GPU_GRAPHS.has(name) ? ['webgpu', 'wasm'] : ['wasm'] });
+    })();
+    const { beatthis, rows } = manifest.frontend_arrays, arrays = [beatthis.hann_window, beatthis.mel_filter, rows.hann_window, rows.mel_filter, ...Object.values(manifest.state.r2_initial)];
+    try {
+        await Promise.all([create, ...reads, ...arrays.map(spec => models.array(spec))]);
     }
-    return new Models(manifest, ort, sessions, read, options.runtimeSource);
+    catch (error) {
+        await create.catch(() => undefined);
+        await models.dispose();
+        throw error;
+    }
+    return models;
 }

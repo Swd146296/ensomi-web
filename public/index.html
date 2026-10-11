@@ -3,39 +3,143 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Ensomi R2: from a song to a playable chart</title>
-<meta name="description" content="Ensomi R2 turns a song into a playable osu!mania 4K chart in seconds. What it does today, what it does not do yet, and how to run it.">
-<meta name="theme-color" content="#16121d">
+<title>ensomi: play the music around you</title>
+<meta name="description" content="ensomi R2 turns a song into a playable osu!mania 4K chart, generated in your browser. What it does today, what it does not do yet, and how to run it.">
+<meta name="theme-color" content="#1c1525">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta property="og:title" content="Ensomi R2: from a song to a playable chart">
-<meta property="og:description" content="A song in, a playable osu!mania 4K chart out. Research release, with its limits stated.">
+<meta property="og:title" content="ensomi: play the music around you">
+<meta property="og:description" content="A song in, a playable osu!mania 4K chart out, generated in your browser. Research release, with its limits stated.">
 <meta property="og:image" content="https://ensomi.app/img/saigetsu.png">
 <meta property="og:url" content="https://ensomi.app/">
 <link rel="stylesheet" href="/styles.css">
+<script type="module" src="/app.js"></script>
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
-<div class="wrap">
-  <header class="top">
-    <a class="brand" href="/"><img src="/mark.png" width="36" height="36" alt="">Ensomi</a>
-    <nav aria-label="Sections">
-      <a href="#aim">Aim</a>
-      <a href="#today">R2 today</a>
-      <a href="#previews">Previews</a>
-      <a href="#status">What works</a>
-      <a href="#run">Run it</a>
-      <a href="#licences">Licences</a>
-    </nav>
-  </header>
+<div class="hero-band">
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="/"><img src="/mark.png" width="36" height="36" alt="">ensomi</a>
+      <nav aria-label="Sections">
+        <a href="#generate" class="desktop-only">Generate</a>
+        <a href="#r2">R2</a>
+        <a href="#previews">Previews</a>
+        <a href="#status">What works</a>
+        <a href="#run">Run it</a>
+        <a href="#licences">Licences</a>
+      </nav>
+    </header>
+    <div class="hero">
+      <svg class="hero-arcs" viewBox="0 0 200 200" aria-hidden="true">
+        <path d="M141.1 55A64 64 0 1 0 149 145.1" fill="none" stroke="#b5b3ef" stroke-width="26" stroke-linecap="round"/>
+        <path d="M78.2 69A46 46 0 0 1 161.2 107.7" fill="none" stroke="#eaa0b7" stroke-width="22" stroke-linecap="round"/>
+        <path d="M89.7 55.8A46 46 0 0 1 127.6 47" fill="none" stroke="#9562d7" stroke-width="22"/>
+      </svg>
+      <p class="eyebrow">R2 · research release</p>
+      <h1><span class="name">ensomi</span> — Play the music around you.</h1>
+      <p class="jp" lang="ja">えんそみ — 聴く音楽から、参加する音楽へ。</p>
+      <p class="lede">R2 turns a song into an osu!mania 4K chart, here in your browser. Load the model, choose a song and a star rating, then play the chart back against the music. The song never leaves your computer.</p>
+    </div>
+  </div>
+</div>
 
+<div class="wrap">
   <main id="main">
-    <section style="padding-top: var(--s4)">
-      <p class="eyebrow">Ensomi R2 · research release</p>
-      <h1>From a song to a playable chart</h1>
-      <p class="lede">Give R2 an audio file and a star rating from 2 to 6. A few seconds later it writes a complete osu!mania 4K chart that opens in osu!.</p>
+    <p class="desktop-note">The chart generator needs a desktop browser. Open this page on a computer to load the model, choose a song and generate a chart.</p>
+    <section id="generate" class="tool" aria-labelledby="generate-title">
+      <h2 id="generate-title" class="visually-hidden">Generate a chart</h2>
+      <div class="tool-row">
+        <div class="panel">
+          <h3><span class="step-num">1</span>Model</h3>
+          <fieldset class="choice">
+            <legend class="visually-hidden">Model source</legend>
+            <label><input type="radio" name="source" value="hub" checked> From Hugging Face</label>
+            <label><input type="radio" name="source" value="folder"> From a downloaded folder</label>
+          </fieldset>
+          <label id="folder-field" hidden>Model folder (<code>ensomi-r2</code> or its <code>onnx</code> folder)
+            <input type="file" id="folder" webkitdirectory multiple></label>
+          <div><button class="btn primary" id="load" type="button">Load model</button></div>
+          <div class="meter" id="model-meter" hidden><span></span></div>
+          <p class="status" id="model-status">About 110 MB from <a href="https://huggingface.co/sed-i/ensomi-r2/tree/main/onnx"><code>sed-i/ensomi-r2</code></a> on the first visit; later visits read it from this browser's cache. Uses WebGPU when the browser offers it, otherwise WebAssembly on one CPU thread.</p>
+        </div>
+        <div class="panel">
+          <h3><span class="step-num">2</span>Song</h3>
+          <label>Audio file <input type="file" id="song" accept="audio/*,.mp3,.ogg,.wav,.flac,.m4a"></label>
+          <p class="status" id="song-status">Any format this browser can decode. The file stays on your computer.</p>
+          <div class="pair">
+            <label>Title <input type="text" id="title" autocomplete="off"></label>
+            <label>Artist <input type="text" id="artist" autocomplete="off"></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="conditions">
+        <h3><span class="step-num">3</span>Conditions</h3>
+        <div class="pair">
+          <label><span class="star-label">Star rating <output id="star-value">3.5</output></span>
+            <input type="range" id="star" min="2" max="5.9" step="0.1" value="3.5"></label>
+          <label>Seed
+            <span class="seed-row"><input type="text" id="seed" inputmode="numeric" value="0" spellcheck="false"><button type="button" class="btn small" id="new-seed">New seed</button></span></label>
+        </div>
+        <div class="sections">
+          <h4>Sections <span class="muted small">optional</span></h4>
+          <p class="small muted">Ask for a style or a star target in one span of the song. Use mm:ss. Each section lasts 8–32 seconds, stays inside the song and does not overlap another; one may start where another ends.</p>
+          <div id="section-list"></div>
+          <button type="button" class="btn small" id="add-section" disabled>Add section</button>
+          <p class="invalid" id="section-error" hidden></p>
+        </div>
+      </div>
+
+      <div class="run">
+        <button class="btn primary big" id="generate-button" type="button" disabled>Generate chart</button>
+        <ol class="phases" id="phases" aria-label="Progress">
+          <li data-phase="1">Prepare</li>
+          <li data-phase="2">Timing</li>
+          <li data-phase="3">Rows</li>
+          <li data-phase="4">Arrangement</li>
+          <li data-phase="5">Export</li>
+        </ol>
+        <p class="status" id="run-status" aria-live="polite">Load the model and choose a song to start.</p>
+      </div>
+      <p class="error" id="error" role="alert" hidden></p>
+    </section>
+
+    <section id="result" aria-labelledby="result-title" hidden>
+      <h2 id="result-title">Your chart</h2>
+      <div class="inspector">
+        <div class="viewport">
+          <canvas id="lanes" tabindex="0" aria-label="Chart viewport: four lanes falling to the judgement line. Click to seek, drag to scrub, use the wheel or the Up and Down keys to move."></canvas>
+          <p class="instrument"><span id="identity"></span><span id="clock">0:00.000</span></p>
+        </div>
+        <canvas id="overview" class="overview" aria-label="Overview of the whole song, bottom to top, with note density. Click or drag to seek."></canvas>
+        <div class="side">
+          <fieldset class="transport">
+            <legend class="visually-hidden">Playback</legend>
+            <button class="btn primary" id="play" type="button" aria-pressed="false" aria-keyshortcuts="Space">Play</button>
+            <button class="btn" id="restart" type="button">Restart</button>
+          </fieldset>
+          <div class="tuning">
+            <div class="preset-row"><span>Audio rate</span><div class="presets" id="rates" role="group" aria-label="Audio rate"></div></div>
+            <div class="preset-row"><span>Visual speed, px/s</span><div class="presets" id="speeds" role="group" aria-label="Visual speed in pixels per second"></div></div>
+          </div>
+          <p class="small muted">Space plays or pauses; ← and → seek 5 seconds. In the lanes, click to seek, drag to scrub, and use the wheel or ↑ ↓ to move. Rose notes are taps, lavender notes are long notes, purple bands are the sections you asked for.</p>
+          <div class="downloads">
+            <a class="btn primary" id="get-osz" download>Download .osz</a>
+            <a class="btn" id="get-osu" download>Download .osu</a>
+          </div>
+          <dl class="receipt" id="receipt"></dl>
+          <table class="times" id="times" aria-label="Time per phase"></table>
+        </div>
+      </div>
+      <audio id="audio" preload="auto"></audio>
+    </section>
+
+    <section id="r2">
+      <h2>R2: from a song to a playable chart</h2>
+      <p class="prose">Give R2 an audio file and a star rating from 2 to under 6, and it writes a complete osu!mania 4K chart that opens in osu!.</p>
       <div class="actions">
         <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2">Model on Hugging Face</a>
         <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/r2-1.0/docs/research/r2_system.md">Read the report</a>
@@ -43,17 +147,17 @@
       </div>
       <figure class="hero-fig">
         <div class="stage"><img src="/img/saigetsu.png" width="1600" height="900" alt="Seven vertical panels of a four-lane chart, read bottom to top and then left to right. Yellow bars are taps and cyan bars are long notes; taps run through every panel and long notes appear in the later ones."></div>
-        <figcaption>SaiGetsu (Cut Ver.), Otokaze, requested at 3.5 stars: a chart generated by R2. Yellow notes are taps, cyan notes are long notes. Each panel reads bottom to top, then continues in the panel to its right.</figcaption>
+        <figcaption>SaiGetsu (Cut Ver.), Otokaze, requested at 3.5 stars: a chart generated by R2. In these renders yellow notes are taps and cyan notes are long notes. Each panel reads bottom to top, then continues in the panel to its right.</figcaption>
       </figure>
     </section>
 
     <section id="aim">
-      <h2>What Ensomi is aiming for</h2>
-      <p class="prose">Ensomi wants listening to music, playing it and creating for it to become one activity. Three scenarios carry that aim.</p>
+      <h2>What ensomi is aiming for</h2>
+      <p class="prose">ensomi wants listening to music, playing it and creating for it to become one activity. Three scenarios carry that aim.</p>
       <div class="cols">
         <div>
           <h3>Ambient play</h3>
-          <p>Music is already playing around you. Ensomi recognises it, finds the current position and plays a chart, generated in real time, that follows the music without interrupting it.</p>
+          <p>Music is already playing around you. ensomi recognises it, finds the current position and plays a chart, generated in real time, that follows the music without interrupting it.</p>
         </div>
         <div>
           <h3>Mapping</h3>
@@ -69,7 +173,7 @@
 
     <section id="today">
       <h2>What R2 does today</h2>
-      <p class="prose">R2 is the first Ensomi release that works from audio alone. A 2 to 3.3 minute song takes 8 to 12 seconds on the machine it was checked on (an Apple M5, CPU, one thread).</p>
+      <p class="prose">R2 is the first ensomi release that works from audio alone. From the command line, a 2 to 3.3 minute song takes 8 to 12 seconds on the machine it was checked on (an Apple M5, CPU, one thread).</p>
       <ol class="steps">
         <li><b>Timing system</b><span>Finds the beats with BeatThis, then refits each tempo segment to the song's own note onsets. No trained weights of its own.</span></li>
         <li><b>Rows model</b><span>2.1M parameters. Beat by beat, it chooses where notes start from what it hears.</span></li>
@@ -80,7 +184,7 @@
 
     <section id="previews">
       <h2>Preview charts</h2>
-      <p class="prose">Four songs, generated at seed 0 with default settings. They illustrate behaviour; they are not a quality benchmark. No audio is included. Each image is the middle page of the chart's render by <a href="https://github.com/ensomi-labs/beatmap-lens">Beatmap Lens</a>.</p>
+      <p class="prose">Four songs, generated at seed 0 with default settings by the command-line system. They illustrate behaviour; they are not a quality benchmark. No audio is included. Each image is the middle page of the chart's render by <a href="https://github.com/ensomi-labs/beatmap-lens">Beatmap Lens</a>.</p>
       <div class="gallery">
         <figure>
           <div class="stage"><img src="/img/hesitation-snow.png" width="1600" height="900" loading="lazy" alt="Generated chart for Hesitation Snow: seven panels of four lanes, almost entirely yellow taps, with no long notes in view."></div>
@@ -105,7 +209,7 @@
     <section id="status">
       <h2>What works and what does not yet</h2>
       <p class="prose">Every chart passes legality and replay checks and has whole-millisecond times. Quality was judged by one experienced player in blind pairs, one generation seed per side, so a single pair is weak evidence.</p>
-      <table class="status">
+      <table class="status-table">
         <thead><tr><th scope="col">Request</th><th scope="col">Status</th><th scope="col">Evidence</th></tr></thead>
         <tbody>
           <tr><th scope="row">Star rating for the whole song</th><td><span class="tag ok">Works</span></td><td>Both blind pairs called the difficulty the right way.</td></tr>
@@ -116,6 +220,7 @@
           <tr><th scope="row">Long-note amount (<code>--ln tap|half|natural</code>)</th><td><span class="tag no">Does not work yet</span></td><td>"Half" removes about a third, and a blind pair could not tell.</td></tr>
         </tbody>
       </table>
+      <p class="muted small" style="margin-top: var(--s3)">The generator above offers the requests marked as working, and stream, jack and section stars as experimental. It does not offer chordjack or the long-note amount.</p>
 
       <p class="callout"><strong>The human chart still wins.</strong> In all three reference pairs, the human chart of the same song was chosen over R2's. On this evidence R2 has not reached human charts.</p>
 
@@ -143,7 +248,8 @@
 
     <section id="run">
       <h2>Run it yourself</h2>
-      <p class="prose">There is no in-browser demo yet. The next steps are to plug the system into the Ensomi macOS app, and to design one model runtime shared by that app and a future web app. Until then R2 runs from the command line. It was checked on macOS arm64 (Apple M5, Python 3.10, torch 2.11, CPU); Linux and CUDA were not run.</p>
+      <p class="prose">The generator on this page runs R2 in your browser with <a href="https://github.com/ensomi-labs/ensomi-web/tree/main/packages/runtime"><code>@ensomi/runtime</code></a>: the networks as ONNX graphs in ONNX Runtime Web, everything else in TypeScript. Given the same decoded audio and the same random draws, that runtime reproduces the four example charts note for note (checked in Node). In the browser the song is decoded by the browser and seeds drive the runtime's own random generator, so a seed here does not give the same chart as the same seed on the command line.</p>
+      <p class="prose">The command-line system was checked on macOS arm64 (Apple M5, Python 3.10, torch 2.11, CPU); Linux and CUDA were not run.</p>
 <pre><code>git clone https://github.com/ensomi-labs/ensomi-model.git
 cd ensomi-model
 git checkout --detach r2-1.0
@@ -159,14 +265,14 @@ uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
     <section id="licences">
       <h2>Licences</h2>
       <div class="prose">
-        <p>The model files and everything else in the Hugging Face repository are <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>: use, share and adapt with credit, not for commercial purposes, and adaptations carry the same licence. The code is AGPL-3.0-only. BeatThis (MIT) is not redistributed; the <code>beat_this</code> package downloads it.</p>
+        <p>The model files and everything else in the Hugging Face repository are <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>: use, share and adapt with credit, not for commercial purposes, and adaptations carry the same licence. The one exception is the ONNX export of BeatThis (<code>onnx/beatthis.onnx</code>), which keeps BeatThis's MIT licence. The model code is AGPL-3.0-only, the browser runtime is Apache-2.0, and this site is MIT.</p>
         <p>R2 and the rows model were trained on osu!'s ranked and loved 4K charts from 2 to 6 stars. Neither those charts nor their audio are distributed.</p>
       </div>
     </section>
   </main>
 
   <footer>
-    <p>Ensomi R2, release <code>r2-1.0</code>. <a href="https://huggingface.co/sed-i/ensomi-r2">Model</a> · <a href="https://github.com/ensomi-labs/ensomi-model">Code</a> · <a href="https://github.com/ensomi-labs">ensomi-labs</a></p>
+    <p>ensomi R2, release <code>r2-1.0</code>. <a href="https://huggingface.co/sed-i/ensomi-r2">Model</a> · <a href="https://github.com/ensomi-labs/ensomi-model">Code</a> · <a href="https://github.com/ensomi-labs">ensomi-labs</a></p>
     <p>Site content follows the R2 report and makes no claim beyond it.</p>
   </footer>
 </div>

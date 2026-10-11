@@ -1,0 +1,34 @@
+{
+  "name": "@ensomi/runtime",
+  "version": "0.1.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "dependencies": {
+    "onnxruntime-web": "1.23.2",
+    "fflate": "0.8.2"
+  },
+  "devDependencies": {
+    "onnxruntime-node": "1.23.2",
+    "typescript": "5.9.3",
+    "tsx": "4.20.6"
+  },
+  "scripts": {
+    "parity": "node --import tsx checks/parity.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "assets",
+    "LICENSE",
+    "README.md"
+  ]
+}

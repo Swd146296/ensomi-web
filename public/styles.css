@@ -1,6 +1,6 @@
 /* Ensomi site: small design system. Tokens first, then base, then components. */
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
 
   /* colour */
   --bg: #faf8fc;
@@ -38,22 +38,6 @@
   --radius: 10px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #16121d;
-    --surface: #211b2c;
-    --line: #3a3149;
-    --text: #ece8f4;
-    --muted: #b0a8c2;
-    --accent: #b9bdfa;
-    --accent-ink: #16121d;
-    --pink: #f0a3bd;
-    --ok: #7fd3a4;
-    --warn: #e6bd6a;
-    --no: #f19aa6;
-  }
-}
-
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -62,6 +46,7 @@ body {
   color: var(--text);
   font: var(--step-0)/1.65 var(--font-text);
   overflow-wrap: break-word;
+  min-width: 60rem;
 }
 img { max-width: 100%; height: auto; display: block; }
 a { color: var(--accent); text-underline-offset: 0.18em; }
@@ -71,7 +56,7 @@ code, pre { font-family: var(--font-mono); font-size: 0.9em; }
 code { background: var(--surface); padding: 0.1em 0.35em; border-radius: 4px; }
 
 .wrap { max-width: var(--wide); margin: 0 auto; padding: 0 var(--s3); }
-@media (min-width: 40rem) { .wrap { padding: 0 var(--s4); } }
+.wrap { padding: 0 var(--s4); }
 .skip { position: absolute; left: -999px; }
 .skip:focus { left: var(--s3); top: var(--s3); background: var(--bg); padding: var(--s2) var(--s3); z-index: 10; }
 
@@ -85,7 +70,7 @@ code { background: var(--surface); padding: 0.1em 0.35em; border-radius: 4px; }
 
 /* text blocks */
 section { padding: var(--s5) 0 0; }
-@media (min-width: 40rem) { section { padding-top: var(--s6); } }
+section { padding-top: var(--s6); }
 h1, h2, h3 { line-height: 1.2; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
 h1 { font-size: var(--step-3); max-width: 20ch; }
 h2 { font-size: var(--step-2); margin-bottom: var(--s3); }
@@ -109,16 +94,16 @@ figure { margin: 0; }
 figcaption { color: var(--muted); font-size: var(--step--1); margin-top: var(--s2); }
 .hero-fig { margin-top: var(--s5); }
 .gallery { display: grid; gap: var(--s4); grid-template-columns: 1fr; margin-top: var(--s4); }
-@media (min-width: 52rem) { .gallery { grid-template-columns: 1fr 1fr; } }
+.gallery { grid-template-columns: 1fr 1fr; }
 .gallery figcaption strong { color: var(--text); }
 
 /* three scenarios, steps */
 .cols { display: grid; gap: var(--s4); grid-template-columns: 1fr; margin-top: var(--s4); }
-@media (min-width: 52rem) { .cols { grid-template-columns: repeat(3, 1fr); } }
+.cols { grid-template-columns: repeat(3, 1fr); }
 .cols > div { border-top: 2px solid var(--line); padding-top: var(--s3); }
 .cols p { color: var(--muted); margin: 0; }
 .steps { list-style: none; padding: 0; margin: var(--s4) 0 0; display: grid; gap: var(--s3); counter-reset: step; }
-@media (min-width: 52rem) { .steps { grid-template-columns: repeat(4, 1fr); } }
+.steps { grid-template-columns: repeat(4, 1fr); }
 .steps li { counter-increment: step; background: var(--surface); border-radius: var(--radius); padding: var(--s3); }
 .steps li::before { content: counter(step); display: block; font-weight: 700; color: var(--pink); }
 .steps b { display: block; }
@@ -130,14 +115,8 @@ figcaption { color: var(--muted); font-size: var(--step--1); margin-top: var(--s
 .status th { font-weight: 600; color: var(--muted); }
 .tag { display: inline-block; font-weight: 700; padding: 0.1rem 0.55rem; border-radius: 999px; border: 1.5px solid currentColor; white-space: nowrap; }
 .tag.ok { color: var(--ok); } .tag.part { color: var(--warn); } .tag.no { color: var(--no); }
-@media (max-width: 40rem) {
-  .status thead { position: absolute; left: -999px; }
-  .status, .status tbody, .status tr, .status td { display: block; }
-  .status tr { padding: var(--s3) 0; border-bottom: 1px solid var(--line); }
-  .status td { border: 0; padding: var(--s1) 0; }
-}
 .checked { display: grid; gap: var(--s3); grid-template-columns: 1fr; margin-top: var(--s4); }
-@media (min-width: 52rem) { .checked { grid-template-columns: 1fr 1fr; } }
+.checked { grid-template-columns: 1fr 1fr; }
 .card { background: var(--surface); border-radius: var(--radius); padding: var(--s4); }
 .card ul { margin: 0; padding-left: 1.2rem; }
 .card li { margin-bottom: var(--s2); }

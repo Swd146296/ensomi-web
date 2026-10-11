@@ -76,6 +76,8 @@ export async function loadModels(source: FileSource | string, options: {
     ort?: Ort;
     session?: ORT.InferenceSession.SessionOptions;
     backend?: 'webgpu' | 'wasm';
+    /** ORT WebAssembly settings applied before sessions are created, e.g. wasmPaths and numThreads. */
+    wasm?: Partial<ORT.Env.WebAssemblyFlags>;
     runtimeSource?: FileSource;
 } = {}): Promise<Models> {
     const read = typeof source === 'string' ? urlSource(source) : source;
@@ -86,7 +88,9 @@ export async function loadModels(source: FileSource | string, options: {
         throw new Error('This runtime supports the released R2 FiLM model with memory and optional readers off');
     }
     const backend = options.backend ?? (typeof navigator !== 'undefined' && 'gpu' in navigator ? 'webgpu' : 'wasm');
-    const ort = options.ort ?? (backend === 'webgpu' ? await import('onnxruntime-web/webgpu') : await import('onnxruntime-web'));
+    const ort = options.ort ?? (backend === 'webgpu' ? await import('onnxruntime-web/webgpu') : await import('onnxruntime-web/wasm'));
+    if (options.wasm)
+        Object.assign(ort.env.wasm, options.wasm);
     const sessions: Record<string, ORT.InferenceSession> = {};
     for (const [name, graph] of Object.entries(manifest.graphs)) {
         sessions[name] = await ort.InferenceSession.create(await read(graph.file), options.session ?? { executionProviders: backend === 'webgpu' ? ['webgpu', 'wasm'] : ['wasm'] });

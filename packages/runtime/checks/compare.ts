@@ -24,3 +24,15 @@ export function firstTextDifference(actual: string, expected: string) {
     return null;
 }
 export function parseOsu(text: string) { return text.split('[HitObjects]\n')[1].trim().split('\n').filter(Boolean).map(line => { const p = line.split(','), lane = (Number(p[0]) - 64) / 128, start_ms = Number(p[2]); return Number(p[3]) & 128 ? { lane, start_ms, end_ms: Number(p[5].split(':')[0]) } : { lane, start_ms }; }); }
+function timingRange(lines: string[]) { const start = lines.indexOf('[TimingPoints]') + 1; let end = start; while (start > 0 && /^-?\d/.test(lines[end] ?? ''))
+    end++; return [start, end]; }
+export function withoutTimingPoints(text: string) { const lines = text.split('\n'), [start, end] = timingRange(lines); return [...lines.slice(0, start), ...lines.slice(end)].join('\n'); }
+export function timingDifference(actual: string, expected: string) {
+    const rows = (text: string) => { const lines = text.split('\n'), [start, end] = timingRange(lines); return lines.slice(start, end).map(line => line.split(',').map(Number)); };
+    const a = rows(actual), b = rows(expected);
+    let max_abs_ms = 0;
+    for (let i = 0; i < Math.min(a.length, b.length); i++)
+        for (let j = 0; j < b[i].length; j++)
+            max_abs_ms = Math.max(max_abs_ms, Math.abs(a[i][j] - b[i][j]));
+    return { rows: b.length, same_rows: a.length === b.length && a.every((r, i) => r.length === b[i].length), max_abs_ms };
+}

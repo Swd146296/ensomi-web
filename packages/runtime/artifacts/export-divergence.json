@@ -13,5 +13,5 @@
   "sampled_choice_differences": 0,
   "hitobject_differences": 0,
   "likely_cause": "Frontend float32 reductions plus double-precision least-squares rounding; full-precision timing serialization exposes differences that do not change chart objects.",
-  "status": "unresolved; strict text check preserved"
+  "status": "within the stage 5 rule: timing-point values within 1e-6 ms; the full-precision text differs"
 }

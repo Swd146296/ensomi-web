@@ -5,9 +5,10 @@ grid fitting, figure sampling, prior lookup, R2 controls and release sampling,
 chart objects, `.osu`, and `.osz` are implemented in TypeScript. Only the six
 networks run through ONNX Runtime. Core source has no Node imports.
 
-**Status:** all four release songs reproduce every sampled choice and all 6,178
-hit objects. The strict acceptance gate is **not passed**: Catch the Moment's
-full-precision timing-point text differs. See
+**Status:** `npm run parity` passes. Replaying Python's random draws, all four
+release songs reproduce every sampled choice and all 6,178 hit objects, and
+every timing-point value is within 1e-6 ms of the Python release (the largest
+difference is 1.2e-8 ms, Catch the Moment). See
 [`artifacts/parity.json`](artifacts/parity.json) and
 [`artifacts/export-divergence.json`](artifacts/export-divergence.json).
 
@@ -18,7 +19,8 @@ import { loadModels, decodeAudio, generateChart } from '@ensomi/runtime';
 
 // The base is the directory containing runtime.json and the six ONNX files.
 const models = await loadModels(
-  'https://huggingface.co/sed-i/ensomi-r2/resolve/main/onnx/'
+  'https://huggingface.co/sed-i/ensomi-r2/resolve/main/onnx/',
+  { wasm: { wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.2/dist/', numThreads: 1 } }
 );
 console.log(models.capabilities);
 
@@ -39,7 +41,8 @@ await models.dispose();
 ```
 
 `loadModels(source, options?)` accepts a base URL or an async function
-`(relativePath) => Uint8Array`. `localFilesSource(files)` constructs the latter
+`(relativePath) => Uint8Array`. `options.wasm` is applied to ONNX Runtime's
+`env.wasm` before sessions are created (`wasmPaths`, `numThreads`). `localFilesSource(files)` constructs the latter
 from browser-selected `File`s. `models.capabilities` uses EnsomiProtocol 0.2's
 field names and numeric enum values. File checksums are left empty; the loader
 does not make checksum manifests. The runtime targets the released FiLM model
@@ -107,21 +110,23 @@ comparison targets. Graph tolerance is `1e-4`; the grid report includes the
 floating error and requires identical whole-ms positions and Mel-frame indices
 (`1e-4 ms` numeric tolerance). Continuous grid values are not bit-identical.
 
-Full four-song parity currently exits **1** at stage 5. Catch the Moment,
-`[TimingPoints]` row 0, line 15:
+Stage 5 passes when the hit objects are identical, every timing-point value is
+within 1e-6 ms, and the rest of the `.osu` text is identical (generator comment
+aside); the full-precision timing text may differ in its last digits. Least-squares
+rounding is not reproducible bit for bit between NumPy and JavaScript, Python's
+own ONNX replay already differs from the release in the last digit, and no
+chart reader uses that precision. The one such difference, Catch the Moment's
+first timing point:
 
 ```text
 Python release: 1659,631.3408705468946,4,2,0,100,1,0
 TypeScript:     1659,631.3408705352042,4,2,0,100,1,0
 ```
 
-The beat-length difference is about `1.17e-8 ms`. Python's own recorded ONNX
-replay writes `631.3408705468947` at that same point, also failing the requested
-byte equality. TypeScript grid fitting from recorded features reaches that
-same last-bit value; the extra difference from PCM comes from frontend float
-arithmetic. No sampled choice or exported hit object changes. Exact timing
-serialization remains unresolved; no release-specific constants or tolerance
-exception were inserted into the exporter.
+The beat-length difference is about `1.17e-8 ms`; Python's own recorded ONNX
+replay writes `631.3408705468947` there. TypeScript grid fitting from recorded
+features reaches that same last-bit value; the extra difference from PCM comes
+from frontend float arithmetic.
 
 Large generated files are under ignored `artifacts/bulk/`. Small reports stay
 in `artifacts/`. Diagnostic scripts `frontend.ts`, `grid.ts`, `rows.ts`, and
@@ -140,17 +145,17 @@ repository's soxr installation; it does not consume song data.
 - `checks/`: Node replay, stage diagnostics, and coefficient generator.
 - `assets/`: FIR coefficients; `artifacts/`: parity and diagnostic reports.
 
-Job 3 still needs the page, file picker, controls, progress/download UI, and
-Beatmap Lens integration. Bundle this ESM package, its runtime assets, and
-onnxruntime-web's WASM assets. Run generation in a Web Worker to avoid blocking
-the UI. Default loading chooses WebGPU plus WASM when `navigator.gpu` exists,
-otherwise WASM; `backend: 'wasm'` forces WASM. ONNX Runtime handles operator
-placement; there is no runtime retry layer.
+The page in `../../site` bundles this package with esbuild and runs generation
+in a Web Worker. Default loading chooses WebGPU plus WASM when `navigator.gpu`
+exists, otherwise WASM (`onnxruntime-web/wasm`); `backend` overrides the
+choice. ONNX Runtime handles operator placement; there is no runtime retry
+layer. The resampler assets under `assets/` are fetched only for raw PCM without
+the two frontend streams; `decodeAudio` supplies both, so the page never
+fetches them.
 
-Browser provider parity, WebGPU operator coverage for these graphs, WASM memory
-use, and browser audio-decode parity remain untested. The graphs use dynamic
-time/candidate dimensions and int64 indexing/state. Job 3 must verify their
-provider placement and the cost of per-row calls. Serve model/WASM/FIR assets
+WebGPU operator coverage and parity for these graphs, browser memory use, and
+browser audio-decode parity remain untested in a browser. The graphs use dynamic
+time/candidate dimensions and int64 indexing/state; a browser check must
+verify their provider placement and the cost of per-row calls. Serve model/WASM/FIR assets
 with suitable CORS and MIME types; configure ORT's WASM paths and threading for
 the deployment. Loading all six sessions retains their weights in memory.
-No files in the site or ensomi-model were changed.

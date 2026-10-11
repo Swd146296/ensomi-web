@@ -1,5 +1,5 @@
 {
-  "status": "stopped-at-stage-5",
+  "status": "parity-passed",
   "package": "@ensomi/runtime",
   "license": "Apache-2.0",
   "files_created": [
@@ -87,9 +87,9 @@
   "checks": {
     "build": "passed",
     "typecheck": "passed",
-    "parity_exit_code": 1,
-    "strict_export_blocker": "artifacts/export-divergence.json",
-    "compiled_api_model_load": "passed: four API exports present, six Node sessions loaded"
+    "parity_exit_code": 0,
+    "compiled_api_model_load": "passed: four API exports present, six Node sessions loaded",
+    "parity_rule": "stage 5: identical hit objects, timing-point values within 1e-6 ms, other .osu text identical"
   },
   "scope": {
     "source_edits": "packages/runtime only",

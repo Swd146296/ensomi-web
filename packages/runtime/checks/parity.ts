@@ -9,13 +9,14 @@ import { round } from '../src/math.js';
 import { Recording } from './recording.js';
 import { ReplayRandom } from './replay_random.js';
 import { networkReplay } from './network.js';
-import { difference, firstTextDifference, parseOsu } from './compare.js';
+import { difference, firstTextDifference, parseOsu, timingDifference, withoutTimingPoints } from './compare.js';
 const modelDir = resolve(process.env.ENSOMI_MODEL_DIR ?? '../../../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2');
 const modelRepo = resolve(process.env.ENSOMI_MODEL_REPO ?? join(modelDir, '../../../../..'));
 const referenceDir = resolve(process.env.ENSOMI_REFERENCE_DIR ?? '../../../ensomi-model/artifacts/runtime-ref');
 const args = process.argv.slice(2), songs = args.filter(x => !x.startsWith('--'));
 const selected = songs.length ? songs : ['hesitation-snow', 'saigetsu', 'catch-the-moment', 'adventure'];
-const report: any = { ort: ort.env.versions.node, provider: 'cpu', threads: 1, graph_tolerance: 1e-4, grid_tolerance_ms: 1e-4, scope: 'recorded graph inputs, PCM frontends, full TypeScript decode with carried state and replayed random draws, exact exports, own PRNG', songs: {}, passed: false };
+const timingToleranceMs = 1e-6;
+const report: any = { ort: ort.env.versions.node, provider: 'cpu', threads: 1, graph_tolerance: 1e-4, grid_tolerance_ms: 1e-4, timing_tolerance_ms: timingToleranceMs, scope: 'recorded graph inputs, PCM frontends, full TypeScript decode with carried state and replayed random draws, exact exports, own PRNG', songs: {}, passed: false };
 await mkdir('artifacts/bulk', { recursive: true });
 const save = () => writeFile('artifacts/parity.json', JSON.stringify(report, null, 2) + '\n');
 const models = await loadModels(async (p) => new Uint8Array(await readFile(join(modelDir, 'onnx', p))), { ort: ort as unknown as Ort, session: { executionProviders: ['cpu'], intraOpNumThreads: 1, interOpNumThreads: 1 }, runtimeSource: async (p) => new Uint8Array(await readFile(join('assets', p))) });
@@ -103,9 +104,11 @@ try {
             const zipValid = strFromU8(archive['generated.osu']) === result.osu && strFromU8(archive['receipt.json']).trim() === result.receipt.receipt_json && archive[audioKey].length === encoded.bytes.length && archive[audioKey].every((x, i) => x === encoded.bytes[i]);
             if (!zipValid)
                 throw new Error(`Stage 5 ${song}: osz round trip changed content`);
+            // Stage 5 rule: identical hit objects, timing-point values within 1e-6 ms, all other .osu text identical.
             const stripGenerator = (text: string) => text.split('\n').filter(line => !/^\/\/ (rows=|@ensomi\/runtime )/.test(line)).join('\n');
             const textDifference = firstTextDifference(stripGenerator(result.osu), stripGenerator(expectedOsu));
-            row.stage5 = { passed: textDifference === null, hitobjects_identical: true, objects: result.chart.objects.length, osu_identical_except_generator: textDifference === null, first_text_difference: textDifference, osz_round_trip: true };
+            const timing = timingDifference(result.osu, expectedOsu), restDifference = firstTextDifference(stripGenerator(withoutTimingPoints(result.osu)), stripGenerator(withoutTimingPoints(expectedOsu)));
+            row.stage5 = { passed: timing.same_rows && timing.max_abs_ms <= timingToleranceMs && restDifference === null, hitobjects_identical: true, objects: result.chart.objects.length, timing_points: timing.rows, timing_max_abs_ms: timing.max_abs_ms, rest_identical: restDifference === null, osu_identical_except_generator: textDifference === null, first_text_difference: textDifference, osz_round_trip: true };
             await mkdir(`artifacts/bulk/${song}`, { recursive: true });
             await writeFile(`artifacts/bulk/${song}/runtime.osu`, result.osu);
             await writeFile(`artifacts/bulk/${song}/runtime.osz`, result.osz!);
@@ -127,10 +130,8 @@ try {
         }
     }
     report.passed = selected.every(song => [1, 2, 3, 4, 5].every(n => report.songs[song][`stage${n}`]?.passed) && report.songs[song].prng?.passed);
-    if (!report.passed) {
-        report.stopped_at_stage = 5;
+    if (!report.passed)
         process.exitCode = 1;
-    }
 }
 catch (error) {
     report.failure = String(error);

@@ -83,10 +83,10 @@ code { background: var(--surface-2); padding: 0.1em 0.4em; border-radius: 6px; }
 .top nav a { color: var(--muted); text-decoration: none; padding: var(--s1) 0; }
 .top nav a:hover { color: var(--text); text-decoration: underline; }
 
-/* hero: the diagonal split of the mark, an open pair of arcs, the statement */
+/* hero: the diagonal split of the mark, the icon, the statement */
 .hero-band { background: linear-gradient(152deg, var(--bg) 0 58%, var(--bg-2) 58% 100%); overflow: hidden; }
 .hero { position: relative; padding: var(--s5) 0; }
-.hero-arcs { position: absolute; right: -3rem; top: -2.5rem; width: 26rem; height: 26rem; opacity: 0.32; pointer-events: none; }
+.hero-icon { position: absolute; right: 0; top: 50%; transform: translateY(-50%); width: clamp(12rem, 22vw, 17rem); border-radius: 22.5%; pointer-events: none; }
 .hero h1 { position: relative; font: 700 var(--step-3)/1.08 var(--font-round); letter-spacing: -0.02em; max-width: 16ch; }
 .hero h1 .name { color: var(--lavender); }
 .hero .jp { position: relative; font: 500 var(--step-1)/1.5 var(--font-round); color: var(--rose); margin-top: var(--s3); }
@@ -237,7 +237,7 @@ footer p { margin-bottom: var(--s2); }
   .wrap { padding: 0 var(--s3); }
   .top { flex-wrap: wrap; }
   .hero h1 { font-size: clamp(2.1rem, 1.2rem + 4.5vw, 3.4rem); }
-  .hero-arcs { width: 16rem; height: 16rem; right: -4rem; top: -1rem; }
+  .hero-icon { display: none; }
   section { padding-top: var(--s5); }
   h2 { font-size: 1.6rem; }
   .cols, .steps { grid-template-columns: 1fr 1fr; }

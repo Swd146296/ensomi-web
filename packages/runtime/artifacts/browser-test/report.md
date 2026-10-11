@@ -1,3 +1,75 @@
+# Ensomi R2 browser tests
+
+## Wasm runtime, 2026-10-12, bings-mac
+
+**The page generates with the Wasm build of ensomi-runtime (`packages/runtime`, vendored from `7130c47`) and its charts are identical to main's TypeScript build on WebGPU and WebAssembly. The browser suite passes. Warm generation is slower: 1.16 to 1.27 times main's on WebGPU and 1.05 to 1.09 times on WebAssembly, and the renderer's peak memory is 0.2 to 0.4 GiB higher. Build flags do not close the gap; it comes from the core.**
+
+Environment: macOS 27, Apple M5 (4 performance and 6 efficiency cores), Chrome 154.0.8037.99 headless (`channel: 'chrome'`), Playwright 1.54.2, ONNX Runtime Web 1.23.2, WebGPU adapter `apple / metal-3` (available headless). Threads as on the site: WebAssembly on 4, next to WebGPU on 2. Local model served by `site/serve.mjs`. Other agents' builds and tests ran on the mac during part of these runs, so timings are compared in back-to-back pairs and the load average is recorded per run (1.0 to 5.3).
+
+**Suite.** Every script in `tests/browser/README.md` ran headless on the new build and passed:
+
+| Check | Result |
+| --- | --- |
+| `page-matrix.mjs` webgpu/wasm local, webgpu/wasm hf, webgpu folder | 30 generations, four songs per source; all charts valid, both downloads on every run, `.osz` audio, chart and receipt exact; the 20–25 s section rejected before sending; no sampling fallbacks |
+| Seed-0 charts across providers and sources | one hash per song: Catch the Moment `b0bd781bf8f4` (894 objects), Adventure `0be1088d6681` (2,271), Hesitation Snow `d9172331dd61` (982), SaiGetsu `009f98d5c4f5` (1,213) |
+| `ENSOMI_PLAYER=1` page-matrix and wheel fixture | 60 fps at 0.5×, 1× and 1.5×; zero geometry drift; seeks within 0.001 ms |
+| `fallback.mjs` | missing adapter and injected device failure both end ready on WebAssembly (4 threads) |
+| `diagnostics.mts webgpu networks` / `wasm networks` | every graph runs; largest difference from the recording 9.3e-5 (BeatThis) |
+| `diagnostics.mts webgpu compare` | 2,712 paired WebGPU/WASM calls on Catch the Moment, largest difference 1.86e-4 (BeatThis), no nonfinite differences, 894 objects |
+| `diagnostics.mts wasm control` | recorded Python PCM and draws: all 6,178 hit objects equal and every draw consumed on the four songs |
+| `diagnostics.mts wasm replay` / `wasm pcm` | browser-decoded audio still diverges from Python at the same draws as on 2026-10-11 (`rows/4`, `r2_pass_2/677`, `rows/1`, `rows/15`); decoding is unchanged (D1) |
+| `mobile.mjs`, `hero-contrast.mjs` + `.py`, `links.mjs` | no page-wide overflow; every text pair passes AA (lowest 6.7:1, hero 8.1:1); all eight links HTTP 200; the command example still scrolls inside its box (D5) |
+| `validate-downloads.py` | all 42 `.osz` in `bulk/` pass CRC and chart checks |
+| `load-benchmark.mjs` | loads complete; the core now reads all 120,376,131 model bytes at load, where the TypeScript runtime deferred 14 filter and state files to the first generation |
+
+**Old against new.** The procedure of `tests/browser/old-vs-new.sh`, three rounds: for each song and provider, main's page (`tests/browser/build-main.sh`) and the new page back to back in fresh Chrome instances, order alternating, three rounds; each run is `page-matrix.mjs` with one song (cold, then warm after a reload). Seconds are medians of the three warm generations; the ratio is the median of the paired ratios; memory is the highest renderer RSS over the three runs.
+
+| Song | Provider | main warm, s | new warm, s | new / main | main peak, GiB | new peak, GiB | Same chart |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Adventure | WebGPU | 5.80 | 7.34 | 1.27 | 3.76 | 3.97 | yes |
+| Catch the Moment | WebGPU | 5.44 | 6.15 | 1.16 | 2.04 | 2.31 | yes |
+| Hesitation Snow | WebGPU | 3.76 | 4.78 | 1.27 | 2.35 | 2.65 | yes |
+| SaiGetsu | WebGPU | 3.54 | 4.17 | 1.25 | 2.05 | 2.34 | yes |
+| Adventure | WebAssembly | 17.09 | 17.50 | 1.09 | 4.11 | 4.45 | yes |
+| Catch the Moment | WebAssembly | 11.21 | 11.52 | 1.08 | 2.56 | 2.90 | yes |
+| Hesitation Snow | WebAssembly | 11.07 | 12.09 | 1.09 | 2.80 | 3.17 | yes |
+| SaiGetsu | WebAssembly | 9.60 | 9.66 | 1.05 | 2.59 | 2.94 | yes |
+
+Absolute seconds carry the shared machine's load (on a quiet run main's Adventure took 5.3–5.4 s on WebGPU and 11.9–12.0 s on WebAssembly); the ratios are the comparison. Cold model load is unchanged (median 1.5 s WebGPU, 1.2 s WebAssembly, local model).
+
+**Where the time goes.** Receipt phase seconds, median over all warm runs above:
+
+| Provider | Build | Spectrogram | BeatThis | Mel | Grid | Rows | Arrangement | Total |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| WebGPU | main | 0.18 | 1.53 | 0.12 | 0.34 | 0.30 | 1.45 | 4.16 |
+| WebGPU | new | 0.23 | 1.44 | 0.98 | 0.16 | 0.68 | 1.55 | 5.33 |
+| WebAssembly | main | 0.16 | 8.52 | 0.58 | 0.21 | 0.20 | 1.40 | 11.33 |
+| WebAssembly | new | 0.21 | 8.55 | 0.77 | 0.14 | 0.73 | 1.73 | 12.23 |
+
+Two causes, both in the core:
+
+- **Software fused multiply-add.** The core's port of V8's `Math` (`crates/generate/src/jsmath.rs`) uses `f64::mul_add` to reproduce Node-on-arm64's last bits. WebAssembly has no scalar FMA, so each call goes to compiler-builtins' software `fma`. A Node CPU profile of two charts (Catch the Moment and Adventure) puts 1.8 s in `fma` alone, under `jsmath::log`, `exp`, `log2` and `log1p`, called from figure sampling (`multinomial`), the Log-Mel `spectrogram`, R2 sampling (`gumbel`), `decode_rows` and `features`. This is the rows, Mel, spectrogram and arrangement increase on both providers; grid fitting is faster than TypeScript.
+- **No overlap with BeatThis.** The TypeScript runtime computed the Log-Mel spectrogram while BeatThis ran on the GPU (#4). The core computes it after BeatThis returns. The Mel phase grows 0.86 s on WebGPU against 0.20 s on WebAssembly, where nothing overlapped before either.
+
+**Build variants.** The same glue with other core builds, alternated with main's page; warm seconds for Adventure / Catch the Moment. Screen 1 is the mean of two rounds; screen 2 is one round (its second round ran under other agents' load and is left out).
+
+| Build | WebGPU | WebAssembly | Screen |
+| --- | --- | --- | --- |
+| main (TypeScript) | 5.85 / 3.64 | 13.74 / 9.87 | 1 |
+| plain (`scripts/wasm-build.sh`) | 7.90 / 4.97 | 15.83 / 11.61 | 1 |
+| plain, `wasm-opt -O3` | 9.97 / 5.66 | 17.25 / 13.35 | 1 |
+| `+simd128`, fat LTO, one codegen unit, `wasm-opt -O3` | 8.94 / 4.61 | 15.45 / 10.54 | 1 |
+| main (TypeScript) | 5.42 / 3.32 | 12.03 / 8.92 | 2 |
+| plain | 7.71 / 4.04 | 13.55 / 9.42 | 2 |
+| `+simd128` | 7.71 / 4.10 | 13.71 / 9.59 | 2 |
+| `+simd128`, fat LTO, one codegen unit | 9.65 / 4.51 | 15.00 / 10.97 | 2 |
+
+None closes the gap, and `wasm-opt -O3` makes it wider, so the vendored build is the plain one that ensomi-runtime's `scripts/wasm-build.sh` makes.
+
+**What it needs.** In ensomi-runtime: an exact FMA that is fast in WebAssembly (or `jsmath` paths that avoid it there), and a generator step that lets the caller run BeatThis while the core computes the Log-Mel spectrogram. Then `npm run vendor`, `npm run same-as-ts` and `tests/browser/old-vs-new.sh` again.
+
+## TypeScript runtime baseline, 2026-10-11
+
 **Ensomi R2 browser test — 2026-10-11, bings-mac.**
 
 The generator works in headed Chrome on this Apple M5. All four songs pass the requested chart and download checks on WebGPU and forced WASM. Browser-decoded audio does **not** preserve Python replay parity; Catch the Moment exceeds a 1 ms grid-difference target. There are also a GPU-failure recovery defect, a mobile text-contrast failure, a broken runtime link, and horizontal scrolling inside the mobile command example. Product source was not changed.

@@ -244,7 +244,7 @@
 
     <section id="run">
       <h2>Run it yourself</h2>
-      <p class="prose">The generator on this page runs R2 in your browser with <code>@ensomi/runtime</code>: the networks as ONNX graphs in ONNX Runtime Web, everything else in TypeScript. Given the same decoded audio and the same random draws, that runtime reproduces the four example charts note for note (checked in Node and in the browser). In the browser the song is decoded by the browser and seeds drive the runtime's own random generator, so a seed here does not give the same chart as the same seed on the command line.</p>
+      <p class="prose">The generator on this page runs R2 in your browser with <code>@ensomi/runtime</code>: the networks as ONNX graphs in ONNX Runtime Web, everything else in ensomi's Rust runtime compiled to WebAssembly. Given the same decoded audio and the same random draws, that runtime reproduces the four example charts note for note (checked in Node and in the browser). In the browser the song is decoded by the browser and seeds drive the runtime's own random generator, so a seed here does not give the same chart as the same seed on the command line.</p>
       <p class="prose">The command-line system was checked on macOS arm64 (Apple M5, Python 3.10, torch 2.11, CPU); Linux and CUDA were not run.</p>
 <pre><code>git clone https://github.com/ensomi-labs/ensomi-model.git
 cd ensomi-model

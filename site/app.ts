@@ -17,14 +17,14 @@ interface Song { file: File; buffer: ArrayBuffer; mel: Float32Array; beatthis: F
 interface SectionDraft { start: string; end: string; kind: string; strength: number; star: number }
 interface Job { song: Song; title: string; artist: string; seed: number | bigint; star: number; sections: SectionRequest[] }
 
-let worker: Worker | undefined, caps: ModelCapabilities | undefined, provider = '', loadSeconds = 0, loading = false;
+let worker: Worker | undefined, caps: ModelCapabilities | undefined, provider = '', threads = 1, loadSeconds = 0, loading = false;
 let song: Song | undefined, job: Job | undefined, generating = false, timer = 0;
 let sections: SectionDraft[] = [], urls: string[] = [];
 let phase = { current: 0, started: 0, seconds: [] as number[] };
-const downloaded = new Map<string, number>();
+const downloaded = new Map<string, [number, number]>();
 
 const mb = (bytes: number) => (bytes / 1e6).toFixed(1);
-const providerName = (name: string) => name === 'webgpu' ? 'WebGPU' : 'WebAssembly, one thread';
+const providerName = (name: string) => name === 'webgpu' ? 'WebGPU' : threads > 1 ? `WebAssembly, ${threads} threads` : 'WebAssembly, one thread';
 function clock(ms: number, millis = false) {
     const total = Math.max(0, ms) / 1000, minutes = Math.floor(total / 60), seconds = total - minutes * 60;
     return `${minutes}:${millis ? seconds.toFixed(3).padStart(6, '0') : String(Math.floor(seconds)).padStart(2, '0')}`;
@@ -77,17 +77,23 @@ function setMeter(fraction: number) { $('model-meter').querySelector('span')!.st
 
 function onFile(data: { path: string; loaded: number; size: number; cached: boolean }) {
     if (!loading) return;
-    downloaded.set(data.path, data.loaded);
-    const total = [...downloaded.values()].reduce((a, b) => a + b, 0);
-    setMeter(data.size ? data.loaded / data.size : 0);
+    // Files download in parallel: the meter follows the bytes of every file started so far.
+    downloaded.set(data.path, [data.loaded, data.size]);
+    let loaded = 0, size = 0;
+    for (const [bytes, total] of downloaded.values()) {
+        loaded += bytes;
+        size += total || bytes;
+    }
+    setMeter(size ? loaded / size : 0);
     $('model-status').textContent = data.cached
-        ? `Reading ${data.path} from this browser's cache · ${mb(total)} MB so far`
-        : `Downloading ${data.path}: ${mb(data.loaded)} of ${data.size ? mb(data.size) : '?'} MB · ${mb(total)} MB so far`;
+        ? `Reading the model from this browser's cache · ${mb(loaded)} MB so far`
+        : `Downloading the model: ${mb(loaded)} of ${mb(size)} MB`;
 }
 
-function onLoaded(data: { capabilities: ModelCapabilities; provider: string; seconds: number }) {
+function onLoaded(data: { capabilities: ModelCapabilities; provider: string; threads: number; seconds: number }) {
     caps = data.capabilities;
     provider = data.provider;
+    threads = data.threads;
     loadSeconds = data.seconds;
     loading = false;
     $('model-meter').hidden = true;

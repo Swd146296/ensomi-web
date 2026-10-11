@@ -97,14 +97,20 @@ export async function decodeRows(models: Models, features: Float32Array, grid: G
         }
         const out = await models.run('rows_step', { context: slice('context', b, cfg.ctx, [1, cfg.ctx]), pos: slice('pos', b, 24 * cfg.enc, [1, 24, cfg.enc]), query: slice('query', b, heads * key, [1, heads, key]), extra: tensor('float32', extra.slice(b * 9, (b + 1) * 9), [1, 9]), prev: tensor('int64', BigInt64Array.of(BigInt(prev)), [1]), hidden, back_keys: tensor('float32', backKeys, [1, lags, heads, key]), eq: tensor('float32', eq, [1, lags, 2]), back_ok: tensor('bool', ok, [1, lags]), temperature: tensor('float32', Float32Array.of(options.temperature ?? 1), []) });
         hidden = out.hidden_out;
-        const gate = out.gate.data as Float32Array, att = out.attention.data as Float32Array, pgen = (out.logp.data as Float32Array).map(Math.exp), p = pgen.map(x => f32(gate[0] * x));
+        const gate = out.gate.data as Float32Array, att = out.attention.data as Float32Array, logp = out.logp.data as Float32Array, pgen = new Float32Array(V), p = new Float32Array(V), ph = new Float32Array(V);
+        for (let v = 0; v < V; v++) {
+            pgen[v] = Math.exp(logp[v]);
+            p[v] = f32(gate[0] * pgen[v]);
+        }
         for (let hd = 0; hd < heads; hd++) {
-            const base = hd * (lags + 1), ph = pgen.map(x => f32(att[base + lags] * x));
+            const base = hd * (lags + 1), generate = att[base + lags], weight = gate[hd + 1];
+            for (let v = 0; v < V; v++)
+                ph[v] = f32(generate * pgen[v]);
             for (let lag = 0; lag < lags; lag++)
                 if (ok[lag])
                     ph[backIds[lag]] = f32(ph[backIds[lag]] + att[base + lag]);
             for (let v = 0; v < V; v++)
-                p[v] = f32(p[v] + f32(gate[hd + 1] * ph[v]));
+                p[v] = f32(p[v] + f32(weight * ph[v]));
         }
         await options.trace?.(`rows/${b}/mixture`, { generator: pgen, mixed: p, back_ids: backIds, quiet: Number(isQuiet), copy_allowed: ok });
         let forbidden = 0;

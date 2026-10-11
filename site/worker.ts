@@ -61,10 +61,23 @@ onmessage = async ({ data }: MessageEvent) => {
             const start = performance.now();
             await models?.dispose();
             models = undefined;
-            const backend = data.backend !== 'wasm' && await webgpuAdapter() ? 'webgpu' : 'wasm';
             const source = data.files ? localFilesSource(data.files) : cachedSource(data.base);
-            models = await loadModels(source, { backend, wasm: { wasmPaths: ORT_WASM, numThreads: 1 } });
-            post({ type: 'loaded', capabilities: models.capabilities, provider: backend, seconds: (performance.now() - start) / 1000 });
+            // WebAssembly threads need cross-origin isolation (public/_headers). Next to WebGPU, WebAssembly runs only the
+            // per-row graphs, which are fastest on two threads; on its own it also runs BeatThis, which gains up to four.
+            const threads = (backend: string) => self.crossOriginIsolated ? Math.min(backend === 'webgpu' ? 2 : 4, navigator.hardwareConcurrency) : 1;
+            const load = (backend: 'webgpu' | 'wasm') => loadModels(source, { backend, wasm: { wasmPaths: ORT_WASM, numThreads: threads(backend) } });
+            let backend: 'webgpu' | 'wasm' = data.backend !== 'wasm' && await webgpuAdapter() ? 'webgpu' : 'wasm';
+            try {
+                models = await load(backend);
+            }
+            catch (error) {
+                if (backend === 'wasm')
+                    throw error;
+                // An adapter does not guarantee a working device or session; WebAssembly needs neither.
+                backend = 'wasm';
+                models = await load(backend);
+            }
+            post({ type: 'loaded', capabilities: models.capabilities, provider: backend, threads: threads(backend), seconds: (performance.now() - start) / 1000 });
         }
         else if (data.type === 'generate') {
             const pcm = { samples: data.mel, channels: 1, mel: data.mel, beatthis: data.beatthis };
@@ -73,6 +86,6 @@ onmessage = async ({ data }: MessageEvent) => {
         }
     }
     catch (error) {
-        post({ type: 'error', during: data.type, message: error instanceof Error ? error.message : String(error) });
+        post({ type: 'error', during: data.type, message: error instanceof Error ? error.message : `ONNX Runtime stopped with error ${String(error)}` });
     }
 };

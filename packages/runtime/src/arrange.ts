@@ -42,7 +42,7 @@ export async function arrange(models: Models, headMs: number[], songMs: number, 
     let strain = new StrainState(), workload = 0;
     for (let k = 0; k <= K; k++) {
         const held = chart.held[k], pattern = held.reduce((s, h, l) => s + h * (1 << l), 0), table = tables[pattern], { heads, ln, features } = table;
-        const support = actions.map((codes, i) => k === K ? codes.every((c, l) => c === (held[l] ? 2 : 0)) : codes.every((c, l) => held[l] || c <= 2) && heads[i].some(Boolean));
+        const support = k === K ? table.final : table.support;
         const output = await stepper.predict(chart, k), plain = logSoftmax32(output.action_logits.data as Float32Array, support);
         await trace?.(`${options.prefix}/${k}/support`, { held, mask: support.map(Number), log_probability: plain });
         let logp: Float32Array | Float64Array = plain, fallback: number | null = null;
@@ -54,11 +54,11 @@ export async function arrange(models: Models, headMs: number[], songMs: number, 
                         logp[i] = -Infinity;
             const legal = logp.slice();
             await trace?.(`${options.prefix}/${k}/tap_mask`, { log_probability: logp });
-            const rejected = guard.rejections(chart, k, heads), rejectArrays = Object.values(rejected);
+            const rejected = guard.rejections(chart, k, table.masks), rejectArrays = Object.values(rejected);
             rejectArrays.forEach((bad, j) => { if (bad.some((v, i) => v && Number.isFinite(logp[i])))
                 maskFirings[j]++; });
             for (let i = 0; i < logp.length; i++)
-                if (rejectArrays.some(bad => bad[i]))
+                if (rejected.reattack[i] || rejected.quad[i] || rejected.jack[i])
                     logp[i] = -Infinity;
             await trace?.(`${options.prefix}/${k}/playability`, { log_probability: logp, ...Object.fromEntries(Object.entries(rejected).map(([name, bad]) => [name, bad.map(Number)])) });
             if (!logp.some(Number.isFinite)) {
@@ -79,7 +79,12 @@ export async function arrange(models: Models, headMs: number[], songMs: number, 
             else if (include.length !== n)
                 running[1] = mean(include.map(j => chart.attack[j].reduce((a, b) => a + b, 0)));
             const force = running.map((r, j) => gains[j] * (r - options.target[j]));
-            logp = Float64Array.from(logp, (x, i) => x - features[i].reduce((s, v, j) => s + v * force[j], 0));
+            const tilted = new Float64Array(logp.length);
+            for (let i = 0; i < logp.length; i++) {
+                const f = features[i];
+                tilted[i] = logp[i] - (0 + f[0] * force[0] + f[1] * force[1] + f[2] * force[2]);
+            }
+            logp = tilted;
         }
         await trace?.(`${options.prefix}/${k}/force`, { log_probability: logp });
         let candidates: Candidates | undefined;
@@ -137,8 +142,10 @@ export async function arrange(models: Models, headMs: number[], songMs: number, 
                 active = scope;
                 break;
             }
-        const normalized = logNormalize(logp);
-        await trace?.(`${options.prefix}/${k}/final_probability`, { log_probability: normalized, probability: normalized.map(Math.exp) });
+        if (trace) {
+            const normalized = logNormalize(logp);
+            await trace(`${options.prefix}/${k}/final_probability`, { log_probability: normalized, probability: normalized.map(Math.exp) });
+        }
         const chosen = fallback ?? await random.gumbel(logp, `${options.prefix}/${k}/action`), codes = actions[chosen], orientation = await random.orientation(`${options.prefix}/${k}/orientation`), lanes = [0, 1, 2, 3].filter(l => held[l] && codes[l] >= 2), releases = [NaN, NaN, NaN, NaN];
         if (orientation)
             lanes.reverse();

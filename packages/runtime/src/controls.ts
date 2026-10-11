@@ -7,6 +7,11 @@ export interface ActionTable {
     ln: number[][];
     features: number[][];
     groups: Record<string, number[][]>;
+    /** Lanes with a head, one bit per lane. */
+    masks: number[];
+    /** Actions allowed on a head row and on the final row. */
+    support: boolean[];
+    final: boolean[];
 }
 export function actionTables(actions: number[][]): ActionTable[] {
     return Array.from({ length: 16 }, (_, pattern) => {
@@ -20,7 +25,9 @@ export function actionTables(actions: number[][]): ActionTable[] {
                 keyed.set(key, []); keyed.get(key)!.push(i); });
             groups[concept] = [...keyed.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(x => x[1]);
         }
-        return { heads, ln, features, groups };
+        const masks = heads.map(h => h.reduce((m, v, l) => m | v << l, 0));
+        const support = actions.map((codes, i) => codes.every((c, l) => held[l] || c <= 2) && heads[i].some(Boolean)), final = actions.map(codes => codes.every((c, l) => c === (held[l] ? 2 : 0)));
+        return { heads, ln, features, groups, masks, support, final };
     });
 }
 export function logNormalize(logp: ArrayLike<number>): Float64Array {
@@ -91,13 +98,20 @@ export class Playability {
     readonly runs = [0, 0, 0, 0];
     quadRun = 0;
     constructor(readonly config: Record<string, any>) { }
-    rejections(chart: ChartState, k: number, heads: number[][]): Record<string, boolean[]> {
-        const elapsed = chart.lastAttack[k].map(t => chart.headMs[k] - t), gap = k ? chart.headMs[k] - chart.headMs[k - 1] : Infinity;
+    rejections(chart: ChartState, k: number, masks: number[]): Record<string, boolean[]> {
+        const gap = k ? chart.headMs[k] - chart.headMs[k - 1] : Infinity;
         let tercile = 0;
         while (tercile < this.config.gap_tercile_edges_ms.length && this.config.gap_tercile_edges_ms[tercile] <= gap)
             tercile++;
-        const cap = this.config.jack_run_caps[tercile];
-        return { reattack: heads.map(h => h.some((x, l) => x && elapsed[l] < this.config.reattack_floor_ms)), quad: heads.map(h => h.every(Boolean) && this.quadRun >= this.config.quad_run_cap), jack: heads.map(h => h.some((x, l) => x && this.runs[l] >= cap)) };
+        const cap = this.config.jack_run_caps[tercile], quad = this.quadRun >= this.config.quad_run_cap;
+        let reattack = 0, jack = 0;
+        for (let l = 0; l < 4; l++) {
+            if (chart.headMs[k] - chart.lastAttack[k][l] < this.config.reattack_floor_ms)
+                reattack |= 1 << l;
+            if (this.runs[l] >= cap)
+                jack |= 1 << l;
+        }
+        return { reattack: masks.map(m => (m & reattack) !== 0), quad: masks.map(m => m === 15 && quad), jack: masks.map(m => (m & jack) !== 0) };
     }
     observe(heads: number[]) { for (let l = 0; l < 4; l++)
         this.runs[l] = heads[l] ? this.runs[l] + 1 : 0; this.quadRun = heads.every(Boolean) ? this.quadRun + 1 : 0; }

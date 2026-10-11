@@ -1,4 +1,4 @@
-import { argmax, f32 } from './math.js';
+import { f32 } from './math.js';
 export interface RandomSource {
     readonly algorithm: string;
     reset(seed: number): void;
@@ -20,12 +20,28 @@ export class SeededRandom implements RandomSource {
         return (t ^ (t >>> 14)) >>> 0;
     }
     uniform(): number { return Math.min(1 - Number.EPSILON / 2, ((this.uint32() >>> 5) * 67108864 + (this.uint32() >>> 6) + 0.5) / 9007199254740992); }
+    // Both samplers take the argmax as they draw: the first maximum wins, as in math.argmax.
     multinomial(p: Float32Array, _name: string): number {
-        const scores = p.map(x => f32(x / f32(-Math.log(this.uniform()))));
-        return argmax(scores);
+        let k = 0, best = -Infinity;
+        for (let i = 0; i < p.length; i++) {
+            const score = f32(p[i] / f32(-Math.log(this.uniform())));
+            if (i === 0 || score > best) {
+                k = i;
+                best = score;
+            }
+        }
+        return k;
     }
     gumbel(logits: ArrayLike<number>, _name: string): number {
-        return argmax(Array.from(logits, x => x - Math.log(-Math.log(this.uniform()))));
+        let k = 0, best = -Infinity;
+        for (let i = 0; i < logits.length; i++) {
+            const score = logits[i] - Math.log(-Math.log(this.uniform()));
+            if (i === 0 || score > best) {
+                k = i;
+                best = score;
+            }
+        }
+        return k;
     }
     orientation(_name: string): number { return this.uint32() & 1; }
 }

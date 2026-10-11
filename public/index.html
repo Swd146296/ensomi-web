@@ -63,7 +63,7 @@
             <input type="file" id="folder" webkitdirectory multiple></label>
           <div><button class="btn primary" id="load" type="button">Load model</button></div>
           <div class="meter" id="model-meter" hidden><span></span></div>
-          <p class="status" id="model-status">About 110 MB from <a href="https://huggingface.co/sed-i/ensomi-r2/tree/main/onnx"><code>sed-i/ensomi-r2</code></a> on the first visit; later visits read it from this browser's cache. Uses WebGPU when the browser offers it, otherwise WebAssembly on one CPU thread.</p>
+          <p class="status" id="model-status">About 110 MB from <a href="https://huggingface.co/sed-i/ensomi-r2/tree/main/onnx"><code>sed-i/ensomi-r2</code></a> on the first visit; later visits read it from this browser's cache. Uses WebGPU for the beat tracker when the browser offers it and WebAssembly threads for the rest. With the model cached, a 3:20 song took about 6 seconds in Chrome on an Apple M5, and about 13 seconds without WebGPU.</p>
         </div>
         <div class="panel">
           <h3><span class="step-num">2</span>Song</h3>

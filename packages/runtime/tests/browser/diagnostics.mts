@@ -32,7 +32,7 @@ const server=createServer(async(req,res)=>{try{const p=new URL(req.url!,'http://
  if(!file){res.writeHead(404).end();return;}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.json')?'application/json':'application/octet-stream');createReadStream(file).pipe(res);
 }catch(e){res.writeHead(500).end(String(e));}}).listen(0,'127.0.0.1');
 await new Promise(r=>server.once('listening',r));const origin=`http://127.0.0.1:${(server.address() as any).port}`;
-const browser=await chromium.launch({channel:'chrome',headless:false,args:['--disable-background-timer-throttling','--disable-renderer-backgrounding']});
+const browser=await chromium.launch({channel:'chrome',headless:!process.env.ENSOMI_HEADED,args:['--disable-background-timer-throttling','--disable-renderer-backgrounding']});
 const page=await browser.newPage({viewport:{width:1200,height:800}}),logs:any[]=[],results:any[]=[];
 page.on('console',m=>logs.push({type:m.type(),text:m.text()}));
 await page.goto(origin);

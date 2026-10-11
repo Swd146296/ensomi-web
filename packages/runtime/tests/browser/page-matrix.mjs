@@ -15,7 +15,7 @@ const selectedSong=process.argv[4];const songs=selectedSong?allSongs.filter(s=>s
 await mkdir(bulk,{recursive:true});await mkdir(join(out,'screenshots'),{recursive:true});
 const report={backend,source,started:new Date().toISOString(),loads:[],runs:[],errors:[]};
 const save=()=>writeFile(join(out,`page-${backend}-${source}${reportSuffix}.json`),JSON.stringify(report,null,2));
-const browser=await chromium.launch({channel:'chrome',headless:false,args:['--disable-background-timer-throttling','--disable-renderer-backgrounding','--enable-precise-memory-info']});
+const browser=await chromium.launch({channel:'chrome',headless:!process.env.ENSOMI_HEADED,args:['--disable-background-timer-throttling','--disable-renderer-backgrounding','--enable-precise-memory-info',...(process.env.ENSOMI_CHROME_ARGS?.split(' ')??[])]});
 report.chromeVersion=browser.version();
 const browserCDP=await browser.newBrowserCDPSession();report.memory={rendererPeakKiB:0,gpuProcessPeakKiB:0,method:'Chrome SystemInfo process IDs; ps RSS every second, maximum renderer and GPU process; not GPU allocations'};
 const memoryTimer=setInterval(async()=>{try{const {processInfo}=await browserCDP.send('SystemInfo.getProcessInfo');for(const p of processInfo.filter(p=>p.type==='renderer'||p.type==='GPU')){const rss=Number(execFileSync('ps',['-o','rss=','-p',String(p.id)],{encoding:'utf8'}).trim());const key=p.type==='GPU'?'gpuProcessPeakKiB':'rendererPeakKiB';report.memory[key]=Math.max(report.memory[key],rss);}}catch{}},1000);

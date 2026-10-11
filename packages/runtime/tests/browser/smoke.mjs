@@ -1,0 +1,17 @@
+import { chromium } from 'playwright';
+import { writeFile } from 'node:fs/promises';
+const out = new URL('../../artifacts/browser-test/', import.meta.url);
+const browser = await chromium.launch({channel:'chrome',headless:false,args:['--disable-background-timer-throttling','--disable-renderer-backgrounding']});
+const context = await browser.newContext({viewport:{width:1440,height:1000}});
+const page = await context.newPage();
+const log=[];
+page.on('console',m=>{log.push([m.type(),m.text()]); if(m.type()!=='log')console.log(m.type(),m.text().slice(0,2000));});
+page.on('pageerror',e=>console.log('pageerror',e.message));
+await page.goto('http://127.0.0.1:8087/?model=/model/onnx/');
+console.log(await page.evaluate(async()=>{const a=await navigator.gpu?.requestAdapter();return {ua:navigator.userAgent,gpu:!!a,info:a?.info};}));
+await page.locator('#load').click();
+await page.waitForFunction(()=>document.querySelector('#model-status').textContent.includes('is ready')||!document.querySelector('#error').hidden,{},{timeout:240000});
+console.log(await page.locator('#model-status').textContent(),await page.locator('#error').textContent());
+await page.screenshot({path:new URL('screenshots/webgpu-load.png',out).pathname,fullPage:false});
+await writeFile(new URL('smoke-log.json',out),JSON.stringify(log,null,2));
+await browser.close();

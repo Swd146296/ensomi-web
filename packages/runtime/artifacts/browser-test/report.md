@@ -1,0 +1,251 @@
+**Ensomi R2 browser test — 2026-10-11, bings-mac.**
+
+The generator works in headed Chrome on this Apple M5. All four songs pass the requested chart and download checks on WebGPU and forced WASM. Browser-decoded audio does **not** preserve Python replay parity; Catch the Moment exceeds a 1 ms grid-difference target. There are also a GPU-failure recovery defect, a mobile text-contrast failure, a broken runtime link, and horizontal scrolling inside the mobile command example. Product source was not changed.
+
+Environment: macOS 27.0 (26A428), Apple M5, 24 GiB RAM, Chrome 154.0.8037.99, Playwright 1.54.2, ONNX Runtime Web 1.23.2. The first local WebGPU baseline used Chrome 154.0.8037.58 before Chrome updated; the subsequent .99 Hugging Face/folder runs reproduced its charts. Adapter: `apple / metal-3`; no software-GPU or WebGPU-enabling flags. Inference runs in the production Web Worker; WASM uses one thread. Mobile results are Chrome device emulation, not real Safari/Android-device tests.
+
+`npm run build:site` and `npm run typecheck:site` passed. The product was served at `http://127.0.0.1:8087/` because 8080 was occupied. The mac has stale Git metadata (`astra-draft-init`), as expected for this synced workspace; no branch operation, commit, push, or deployment was performed. Tested source/bundle identities are in [source-hashes.json](source-hashes.json); [source-verification.json](source-verification.json) confirms the snapshot stayed unchanged. Generated bundles were rebuilt with the requested build command.
+
+**1. WebGPU execution and numerical agreement.**
+
+All six graphs execute GPU compute dispatches and all six also contain CPU/WASM placements. No real graph/session failure occurred on this Mac. The table combines ORT’s verbose optimized-node placement log, actual `GPUComputePassEncoder.dispatchWorkgroups` observations for one recorded invocation per graph, and a separate complete Catch the Moment generation that ran every graph call twice with identical inputs (WebGPU versus WASM). Placement counts include metadata and copy nodes; they are not shader counts.
+
+| Graph | GPU / CPU nodes | GPU dispatches, one call | Paired calls, song | Maximum absolute output difference |
+
+| --- | --- | --- | --- | --- |
+
+| beatthis | 1469 / 614 | 965 | 5 | 0.000185966492 |
+
+| rows_encoder | 159 / 89 | 131 | 1 | 1.3589859e-05 |
+
+| rows_step | 44 / 3 | 32 | 200 | 1.52587891e-05 |
+
+| r2_predict | 73 / 3 | 51 | 1228 | 1.33514404e-05 |
+
+| r2_release | 50 / 11 | 44 | 52 | 0.000122070312 |
+
+| r2_commit | 273 / 1 | 217 | 1226 | 5.96046448e-06 |
+
+
+
+The largest WebGPU–WASM difference is **0.0001859665** in BeatThis, over **2,712 paired graph calls**. There were no unequal nonfinite outputs. Every WebGPU/WASM seed-0 hit object and chart duration is identical across the four songs. The largest timing-point value difference is **1.454754965e-7 ms**, below the agreed 1e-6 ms tolerance.
+
+CPU placements: BeatThis has 614 nodes, predominantly int64 shape/index processing (`Gather`, `Unsqueeze`, `Concat`, integer arithmetic and slicing). Rows encoder has 89 shape, index, range and mask nodes. R2 commit’s `/Add_24` updates an int64 counter. R2 predict places `/Cast`, `/ReduceSum`, `/Greater` on CPU; release places 11 nodes from its int64 action/index/count branch on CPU. Rows step places `/gru/GRU`, `/Unsqueeze_2`, and `/LogSoftmax` on CPU; GRU and LogSoftmax are absent from the installed WebGPU operator registry. ORT explicitly logs that some shape-related CPU paths avoid GPU transfer overhead. [operator-placement.json](operator-placement.json) lists **every** placed node, operator, and available inferred dtype. Full logs and direct dispatch evidence are under `bulk/diagnostics-webgpu-networks-*`; full output-error aggregation is in [diagnostics-webgpu-compare.json](diagnostics-webgpu-compare.json).
+
+A missing adapter correctly selects WASM. A separately injected `GPUAdapter.requestDevice` failure leaves the model unloaded with `Could not load the model: 9392000`; it does not retry WASM. This is fault-injection evidence, not a spontaneous failure of this Mac’s GPU. See defect D2 and [fallback.json](fallback.json).
+
+**2. Functional checks.**
+
+There were **34 successful page generations**: four songs through the local HTTP model, Hugging Face, and the directory-upload input (the `onnx/` subfolder), plus provider/cache/section repetitions. Both providers were exercised with local HTTP and Hugging Face; Directory-upload runs used WebGPU. Seed was 0 and stars were the release values below. Every run had integer milliseconds in range, lanes 0–3, start/lane ordering, no duplicate heads or overlapping holds, and all holds closed. Emergency sampling fallback count was zero.
+
+| Song | Stars | Duration, s | Taps | Holds | Total objects | Rules / exports |
+
+| --- | --- | --- | --- | --- | --- | --- |
+
+| Hesitation Snow | 2.5 | 165.679 | 530 | 452 | 982 | PASS |
+
+| SaiGetsu | 3.5 | 133.224 | 905 | 308 | 1213 | PASS |
+
+| Catch the Moment | 3.5 | 121.169 | 675 | 219 | 894 | PASS |
+
+| Adventure | 4.5 | 199.965 | 2044 | 227 | 2271 | PASS |
+
+
+
+Both download links were clicked on every run. All **34 `.osz` files** contain `generated.osu`, the correct `audio.mp3` or `audio.ogg`, and `receipt.json`. Encoded audio is byte-identical to the uploaded file; the archived chart matches the direct `.osu` download and its parsed objects match the result chart. An independent Python ZIP reader verified all CRCs: **34/34 pass**. Evidence: [download-validation.json](download-validation.json), `page-*.json`, and the downloaded files in `bulk/`.
+
+SaiGetsu’s requested **20–40 s jumpstream span at 0.7** was accepted on both providers, added bookmarks at 20000/40000 ms, and affected the chart. Its measured stream statistic was **0.734848** against target **0.747444**, with jump share **0.424242**; both were inside their calibrated bands. A **20–25 s** span displayed `Section 1: a section must last 8–32 seconds.` and disabled Generate before any request was sent. Screenshots: [accepted section](screenshots/webgpu-local-cold-saigetsu-section.png), [invalid section](screenshots/webgpu-invalid-section.png).
+
+**3. Player and Beatmap Lens comparison.**
+
+The instrumented production canvas was checked against `HTMLAudioElement.currentTime`. Note coordinates and the displayed clock were observed independently; the clock has 1 ms display precision. The extended run reused the exact previously generated Adventure chart and original audio to isolate rendering; an earlier freshly generated Adventure result also passed. Each rate was exercised for 60 seconds of wall playback at 240 px/s.
+
+| Rate | Frames | FPS | p95 interval, ms | Max interval, ms | p95 draw CPU, ms | Max geometry drift, ms | Max clock-label drift, ms |
+
+| --- | --- | --- | --- | --- | --- | --- | --- |
+
+| 1 | 3601 | 59.999 | 17.40 | 17.90 | 0.80 | 0.000 | 0.500 |
+
+| 0.5 | 3600 | 60.001 | 18.10 | 18.80 | 0.90 | 0.000 | 0.500 |
+
+| 1.5 | 3600 | 60.001 | 18.10 | 18.80 | 0.90 | 0.000 | 0.500 |
+
+
+
+There was no accumulated drift and no drift beyond one frame. This measures the browser audio clock and rendered geometry, not acoustic output latency or physical display scanout. Space play/pause, ±5 s keys, ±40 px Up/Down, click seek, drag scrub, wheel, overview seek, and restart passed. Seek errors were at most **0.001 ms** after settling. A macOS/Chrome input scaling detail is documented in [wheel.json](wheel.json): Playwright’s `wheel(0,120)` delivers `deltaY=240`, correctly moving 1000 ms at 240 px/s; a DOM event with `deltaY=120` moves 500 ms. This is not an application wheel defect. Evidence: [player-extended.json](player-extended.json), `bulk/player-*-frames.json`, [player screenshot](screenshots/player-adventure.png).
+
+The named reference `beatmap-lens/apps/inspector/src/InspectWorkspace.vue` currently renders a static SVG preview. The live behavior was compared by source review with `FallingNoteViewport.vue`, `CompareWorkspace.vue`, and the annotation playback controllers; the reference app was not run. Ensomi matches the wheel/arrow direction and pixel-to-time conversion, separates visual speed from audio rate, uses an audio-clock playhead, and supplies a density overview. Gaps: Lens has selection playback/looping, audio offset and volume, and range selection with Shift-drag scrubbing; Ensomi’s plain drag scrubs and has no selection, loop, offset, volume, or arbitrary visual-speed field. These are feature gaps, not failures of the tested transport controls.
+
+**4. Time to first chart.**
+
+Seconds below are individual sequential observations. Cold means a fresh Chrome context with an empty Cache API; warm means a reload after generation populated the cache. OS filesystem, GPU-driver, and CDN-edge caches were not purged. Network timings vary between runs. The two songs are each the **first generation in their session** in this table. Total is model load + browser audio decode + observed Generate-click-to-result wall time, excluding human file-picking time. Decode is read from the page’s 0.01 s timing table; totals are consequently approximate.
+
+| Song | Provider | Cache | Model load | Decode | Generation wall | First-chart total |
+
+| --- | --- | --- | --- | --- | --- | --- |
+
+| Catch the Moment | webgpu | cold | 20.70 | 0.20 | 27.08 | 47.98 |
+
+| Catch the Moment | webgpu | warm | 0.77 | 0.22 | 10.72 | 11.71 |
+
+| Catch the Moment | wasm | cold | 14.81 | 0.20 | 32.65 | 47.66 |
+
+| Catch the Moment | wasm | warm | 0.47 | 0.20 | 18.07 | 18.74 |
+
+| Adventure | webgpu | cold | 14.84 | 0.55 | 35.47 | 50.87 |
+
+| Adventure | webgpu | warm | 0.77 | 0.56 | 21.87 | 23.19 |
+
+| Adventure | wasm | cold | 15.92 | 0.53 | 40.49 | 56.94 |
+
+| Adventure | wasm | warm | 0.45 | 0.50 | 26.97 | 27.93 |
+
+
+
+Per-phase receipt timings (s) follow. Cold first-generation frontend and R2 times include deferred downloads of Mel filters and initial-state arrays; they are not pure compute measurements. Receipt generation totals exclude some validation, ZIP packaging and message delivery, so the wall column above is slightly larger.
+
+Catch the Moment:
+
+| Provider / cache | PCM | Spectrogram | BeatThis | Mel | Grid | Rows | Prior | R2 | Export |
+
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+
+| webgpu / cold | 0.000 | 2.946 | 1.114 | 3.710 | 0.145 | 0.642 | 0.002 | 18.409 | 0.001 |
+
+| webgpu / warm | 0.000 | 0.896 | 1.124 | 1.201 | 0.154 | 0.646 | 0.001 | 6.590 | 0.001 |
+
+| wasm / cold | 0.000 | 2.724 | 13.881 | 2.994 | 0.142 | 0.206 | 0.001 | 12.592 | 0.001 |
+
+| wasm / warm | 0.000 | 0.806 | 14.086 | 1.095 | 0.141 | 0.205 | 0.001 | 1.636 | 0.001 |
+
+
+
+Adventure:
+
+| Provider / cache | PCM | Spectrogram | BeatThis | Mel | Grid | Rows | Prior | R2 | Export |
+
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+
+| webgpu / cold | 0.000 | 3.591 | 1.589 | 3.814 | 0.327 | 1.344 | 0.002 | 24.663 | 0.001 |
+
+| webgpu / warm | 0.000 | 1.442 | 1.593 | 2.022 | 0.324 | 1.356 | 0.002 | 14.978 | 0.001 |
+
+| wasm / cold | 0.000 | 3.220 | 19.389 | 3.634 | 0.319 | 0.391 | 0.002 | 13.393 | 0.001 |
+
+| wasm / warm | 0.000 | 1.294 | 19.398 | 1.784 | 0.319 | 0.398 | 0.002 | 3.636 | 0.001 |
+
+
+
+An additional test-only worker build timed the production file-reading and session-creation calls separately. It loaded **110,884,603 bytes** (runtime manifest plus six graphs). File read time includes transfer/cache reads and cache writes. Session initialization includes ORT bootstrap/WASM fetching; ORT module import was 0.002–0.003 s. The remaining small difference is manifest parsing and orchestration. These independent load measurements should not be substituted into the first-chart samples above.
+
+| Source | Provider | Cache | File reads / download, s | Graph initialization, s | Total load, s |
+
+| --- | --- | --- | --- | --- | --- |
+
+| local | webgpu | cold | 0.227 | 1.365 | 1.607 |
+
+| local | webgpu | warm | 0.022 | 0.737 | 0.773 |
+
+| local | wasm | cold | 0.201 | 0.952 | 1.165 |
+
+| local | wasm | warm | 0.020 | 0.429 | 0.460 |
+
+| hf | webgpu | cold | 14.435 | 1.476 | 15.931 |
+
+| hf | webgpu | warm | 0.023 | 0.690 | 0.728 |
+
+| hf | wasm | cold | 13.748 | 0.977 | 14.745 |
+
+| hf | wasm | warm | 0.021 | 0.410 | 0.443 |
+
+
+
+Warm load-only file reads were all Cache API hits. First generation reads 14 additional filter/state files (1,040,136 bytes), for 111,924,739 model bytes in total; these are cached on first use. See [load-benchmark.json](load-benchmark.json) for individual graph/read times and resource timings. Local compute baselines illustrate the tradeoff: Adventure’s BeatThis takes **1.58 s WebGPU / 19.62 s WASM**, while R2 takes **15.15 / 3.67 s**. Consider choosing providers per graph after fixing frontend parity.
+
+Peak observed renderer RSS in the isolated Adventure cold/warm sessions: **2.83 GiB WebGPU**, **3.15 GiB WASM**; the four-song WASM session reached **3.31 GiB** in the RSS sampler. The page’s main-thread JS heap peaked around **118 MB**, which excludes much worker/WASM/GPU storage. RSS was sampled once per second and includes the whole renderer, retained test results, and decoded audio; GPU allocation peak was not available. Per-session memory fields are in `page-*.json` and the independent samples in `memory-*.json`.
+
+**5. Browser decode against Python.**
+
+The grid comparison evaluates the same 24 candidate head positions per beat as the existing runtime parity check, before whole-ms rounding. Counts and beat indexing matched on all four songs. Pairing differently generated final heads by ordinal would be misleading, so the table uses aligned grid positions instead. Runtime replay used the recorded random values without substituting recorded choices.
+
+| Song | Candidate positions | Max grid difference, ms | Median, ms | Rounded positions changed | First sampled-choice divergence |
+
+| --- | --- | --- | --- | --- | --- |
+
+| Hesitation Snow | 8976 | 0.106141 | 0.106141 | 998 | rows/4/figure |
+
+| SaiGetsu | 5472 | 0.040349 | 0.040349 | 268 | r2_pass_2/677/action |
+
+| Catch the Moment | 4800 | 2.669289 | 1.211922 | 3236 | rows/1/figure |
+
+| Adventure | 10248 | 0.054563 | 0.054563 | 535 | rows/15/figure |
+
+
+
+None of the browser-PCM replays matches Python. SaiGetsu finishes with **1,203 objects versus 1,215**, and leaves two recorded draws unused; its rows have the same count but some head times differ by 1 ms. The other three change row/hold choices and then cannot consume the original linear draw sequence (the requested draw name no longer matches). Those runs are reported as divergent/aborted, not as completed charts. Full differences and stopping points: [diagnostics-wasm-replay.json](diagnostics-wasm-replay.json).
+
+Positive control: the **same browser WASM runtime and replay harness**, given recorded Python native PCM plus its Mel PCM, reproduces **all 6,178 hit objects and 12,733 choices** exactly across the four songs, consuming every draw. This isolates the failed replay to the browser audio frontend rather than the replay implementation. Evidence: [diagnostics-wasm-control.json](diagnostics-wasm-control.json).
+
+| Song | Native-rate frames difference | 24 kHz frames difference | Sampled native PCM max error | Sampled Mel PCM max error |
+
+| --- | --- | --- | --- | --- |
+
+| Hesitation Snow | 0 | -1 | 2.98023224e-07 | 0.314031 |
+
+| SaiGetsu | 0 | -1 | 0.0706441402 | 0.182995 |
+
+| Catch the Moment | 0 | 0 | 8.94069672e-07 | 0.361941 |
+
+| Adventure | 0 | -1 | 3.57627869e-07 | 0.378881 |
+
+
+
+PCM error samples cover four 2-second windows per song (0, 30, 60, 100 s), not every sample. Native-rate decoding has zero length difference and zero measured lag. Three songs agree within 9e-7 in the sampled native PCM. SaiGetsu has **decoder clipping**: at **30,813.696 ms**, a Python channel value **1.141288161** becomes **1.0** in Chrome, producing a 0.070644 mono difference. This also occurs at negative peaks.
+
+The dominant frontend change is **resampling and amplitude preprocessing**: `src/decode_audio.ts` asks WebAudio to resample independently to 24,000 and 22,050 Hz and then normalizes the Mel stream. Python’s Mel loader uses pydub/ffmpeg, integer audio operations and `set_frame_rate`; BeatThis uses libsndfile plus the recorded torchaudio resampler. Native PCM is nearly identical for the other three songs, while sampled normalized Mel errors reach 0.18–0.38, supporting this attribution. Chrome’s resampled 24 kHz stream is one sample shorter on three songs (**0.041667 ms**); the song-duration difference is at most **0.031462 ms**. Length rounding alone cannot explain Catch the Moment’s 2.67 ms grid change. Both MP3 header classes in these fixtures require zero Python lead correction. Evidence: [diagnostics-wasm-pcm.json](diagnostics-wasm-pcm.json). The exact share of grid error attributable to each resampler was not separately ablated.
+
+**Mobile, theme and contrast.**
+
+The hero, prose, captions, links and previews fit the tested widths; the generator and inspector are hidden and the short desktop-only note is visible. All preview images load. Captions and overall patterns are readable; tiny embedded timing labels remain full-song overview details. There is no page-wide horizontal overflow, but the command example has its own horizontal scrollbar.
+
+| Profile / width | Document scroll width | Tool hidden / note shown | Code box / contents width |
+
+| --- | --- | --- | --- |
+
+| iphone-13 / 390 | 390 | yes / yes | 356 / 650 |
+
+| pixel-7 / 393 | 393 | yes / yes | 359 / 650 |
+
+| phone-360 / 360 | 360 | yes / yes | 326 / 650 |
+
+| phone-430 / 430 | 430 | yes / yes | 396 / 650 |
+
+| desktop / 1440 | 1440 | desktop tool visible | no internal overflow |
+
+
+
+The plum surfaces and lavender/rose/purple/coral tokens match the requested theme. Measured ordinary text/control pairs, including the worst primary-button gradient endpoint, reach at least **6.6955:1**. However, a screenshot-backed check found that the mobile Japanese tagline overlays the decorative lavender arc: **#EAA0B7 over composited #524B6C = 3.9549:1** at 21.6 px / weight 500. It requires **4.5:1**, so mobile text contrast **fails AA** at all four tested phone widths. The desktop hero passes. The first DOM-only scan missed the sibling SVG backdrop; [hero-contrast.json](hero-contrast.json) uses CSS foreground colors and a text-hidden screenshot of the actual background at opaque glyph pixels. The criterion is [WCAG 2.2, 1.4.3](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html).
+
+Screenshot paths: [iPhone full page](screenshots/iphone-13.png), [iPhone hero](screenshots/iphone-13-hero.png), [Pixel full page](screenshots/pixel-7.png), [Pixel previews](screenshots/pixel-7-previews.png), [360 px](screenshots/phone-360.png), [430 px](screenshots/phone-430.png), [360 px command example](screenshots/phone-360-code.png), [desktop](screenshots/desktop.png). Eight of nine unique external links return HTTP 200; the runtime source link returns HTTP 404 ([links.json](links.json)).
+
+**Defects, minimal reproductions and recommended order.**
+
+| ID / priority | Minimal reproduction and observed result | Likely code / first fix |
+
+| --- | --- | --- |
+
+| D1 / first, parity | Run `node --import tsx tests/browser/diagnostics.mts wasm replay`; Catch grid max/median 2.669/1.212 ms, and all four browser-PCM replays diverge. `wasm control` passes all four. | `packages/runtime/src/decode_audio.ts:7–21`; standardize decoder clipping, downmix, resampling and normalization with Python before claiming browser frontend parity. |
+
+| D2 / recovery | Run `node tests/browser/fallback.mjs`; device-creation failure gives `Could not load the model: 9392000`, with no WASM retry. Missing-adapter case succeeds. | `site/worker.ts:64–76`, `src/models.ts:94–98`; retry whole-model initialization on WASM after GPU initialization fails, dispose partial sessions, and show a useful error. [Screenshot](screenshots/fallback-device-failure.png). |
+
+| D3 / mobile AA | Open at 390 px (also 360/393/430); Japanese tagline crosses the arc, contrast 3.955:1 instead of 4.5:1. | `public/styles.css:89,92,240` `.hero-arcs` / `.hero .jp`; move or fade the decorative arc behind the tagline, or give the text a sufficiently dark backing. |
+
+| D4 / link | Click `@ensomi/runtime` under “Run it yourself”; GitHub returns 404 at `ensomi-web/tree/main/packages/runtime`. | `public/index.html:251`; point to a published revision, or verify the destination after the runtime branch lands on main. |
+
+| D5 / strict mobile no-scroll target | At 360 px, scroll to “Run it yourself”: the command box is 326 px wide with 650 px of content and requires horizontal panning. | `public/styles.css:226` `pre` and `public/index.html:253`; wrap/split commands on narrow screens. Page-wide overflow itself passes. |
+
+
+
+Fix **D1 first** if browser/Python replay parity is the release gate. D2 and D3 should also be fixed before treating the page as broadly robust and AA compliant. Then repair the link and narrow-screen command layout. Provider selection per graph is the next performance experiment: keep BeatThis on WebGPU and benchmark rows/R2 steps on WASM; the present small-step GPU transfers cost substantially more than CPU execution. Also benchmark parallel loading or packing of the ten initial-state files currently awaited serially in `src/r2/stepper.ts:7–8`; their cold network latency appears inside R2 time. No performance change was made in this task.
+
+Reusable commands and measurement caveats are in [tests/browser/README.md](../../tests/browser/README.md). Only test scripts and evidence were added under the authorized directories; product source was not edited. Raw tensors were served read-only from the existing reference directory; generated bundles, archives, long logs, and frame traces are under `bulk/`.

@@ -1,6 +1,6 @@
 /** Screenshot-backed contrast check for text overlapping the decorative SVG. */
 import {chromium,devices} from 'playwright';import {writeFile} from 'node:fs/promises';import {resolve,join} from 'node:path';
-const out=resolve(import.meta.dirname,'../../artifacts/browser-test'),browser=await chromium.launch({channel:'chrome',headless:false}),rows=[];
+const out=resolve(import.meta.dirname,'../../artifacts/browser-test'),browser=await chromium.launch({channel:'chrome',headless:!process.env.ENSOMI_HEADED}),rows=[];
 for(const [name,width] of [['phone-360',360],['iphone-13',390],['pixel-7',393],['phone-430',430],['desktop',1440]]){
  const profile=name==='desktop'?{}:devices[name==='pixel-7'||name==='phone-360'?'Pixel 7':'iPhone 13'];
  const context=await browser.newContext({...profile,viewport:{width,height:1000},isMobile:width<500}),page=await context.newPage();await page.goto('http://127.0.0.1:8087/');

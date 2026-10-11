@@ -7,3 +7,4 @@ public/worker.js
 public/ensomi-runtime.wasm
 packages/runtime/artifacts/browser-test/*
 !packages/runtime/artifacts/browser-test/report.md
+packages/runtime/artifacts/speed/runs/

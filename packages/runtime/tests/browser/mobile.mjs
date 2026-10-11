@@ -2,7 +2,7 @@ import { chromium, devices } from 'playwright';
 import {writeFile,mkdir} from 'node:fs/promises';
 import {resolve,join} from 'node:path';
 const out=resolve(import.meta.dirname,'../../artifacts/browser-test'),base=process.env.ENSOMI_TEST_URL||'http://127.0.0.1:8087';
-const browser=await chromium.launch({channel:'chrome',headless:false});const results=[];
+const browser=await chromium.launch({channel:'chrome',headless:!process.env.ENSOMI_HEADED});const results=[];
 for(const [name,profile,width] of [['iphone-13',devices['iPhone 13'],390],['pixel-7',devices['Pixel 7'],393],['phone-360',devices['Pixel 7'],360],['phone-430',devices['iPhone 13'],430],['desktop',{},1440]]){
  const context=await browser.newContext({...profile,viewport:{width,height:name==='desktop'?1000:844}}),page=await context.newPage();await page.goto(base);await page.locator('img').first().waitFor();await page.evaluate(()=>Promise.all([...document.images].map(i=>{i.loading='eager';return i.decode().catch(()=>{});})));
  const data=await page.evaluate(()=>{

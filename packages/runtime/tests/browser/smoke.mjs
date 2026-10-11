@@ -1,7 +1,7 @@
 import { chromium } from 'playwright';
 import { writeFile } from 'node:fs/promises';
 const out = new URL('../../artifacts/browser-test/', import.meta.url);
-const browser = await chromium.launch({channel:'chrome',headless:false,args:['--disable-background-timer-throttling','--disable-renderer-backgrounding']});
+const browser = await chromium.launch({channel:'chrome',headless:!process.env.ENSOMI_HEADED,args:['--disable-background-timer-throttling','--disable-renderer-backgrounding']});
 const context = await browser.newContext({viewport:{width:1440,height:1000}});
 const page = await context.newPage();
 const log=[];

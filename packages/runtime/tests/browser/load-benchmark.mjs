@@ -8,18 +8,18 @@ import { createReadStream } from 'node:fs';
 import { createServer } from 'node:http';
 import {resolve,join,extname} from 'node:path';
 const runtime=resolve(import.meta.dirname,'../..'),repo=resolve(runtime,'../..'),model=resolve(repo,'../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2'),out=join(runtime,'artifacts/browser-test'),bundle=join(out,'bulk/loading-worker.js');
-await build({entryPoints:[join(repo,'site/worker.ts')],bundle:true,format:'esm',target:'es2022',outfile:bundle,plugins:[{name:'measure-production-load',setup(b){b.onLoad({filter:/\/src\/models\.ts$/},async({path})=>{
+await build({entryPoints:[join(repo,'site/worker.ts')],bundle:true,format:'esm',target:'es2022',outfile:bundle,plugins:[{name:'measure-production-load',setup(b){b.onLoad({filter:/\/src\/models\.js$/},async({path})=>{
  let s=await readFile(path,'utf8');
- s=s.replace("const read = typeof source === 'string' ? urlSource(source) : source;",`const rawRead = typeof source === 'string' ? urlSource(source) : source; const read = async (path:string) => { const start=performance.now();const bytes=await rawRead(path);postMessage({type:'test-read',path,bytes:bytes.length,seconds:(performance.now()-start)/1000});return bytes;};`);
+ s=s.replace("const read = typeof source === 'string' ? urlSource(source) : source;",`const rawRead = typeof source === 'string' ? urlSource(source) : source; const read = async (path) => { const start=performance.now();const bytes=await rawRead(path);postMessage({type:'test-read',path,bytes:bytes.length,seconds:(performance.now()-start)/1000});return bytes;};`);
  s=s.replace('const ort = options.ort ??', 'const importStart=performance.now();const ort = options.ort ??');
  s=s.replace('if (options.wasm)', "postMessage({type:'test-import',seconds:(performance.now()-importStart)/1000});\n    if (options.wasm)");
- s=s.replace('sessions[name] = await ort.InferenceSession.create(await read(graph.file),', 'const bytes=await read(graph.file);const start=performance.now();sessions[name] = await ort.InferenceSession.create(bytes,');
- s=s.replace("['wasm'] });", "['wasm'] });postMessage({type:'test-init',name,seconds:(performance.now()-start)/1000});");
- return {contents:s,loader:'ts'};
+ s=s.replace('sessions[name] = await ort.InferenceSession.create(await reads[i],', '{const bytes=await reads[i];const start=performance.now();sessions[name] = await ort.InferenceSession.create(bytes,');
+ s=s.replace("['wasm'] });", "['wasm'] });postMessage({type:'test-init',name,seconds:(performance.now()-start)/1000});}");
+ return {contents:s,loader:'js'};
  });}}]});
-const server=createServer((req,res)=>{const p=new URL(req.url,'http://localhost').pathname,file=p==='/worker.js'?bundle:p.startsWith('/model/')?join(model,p.slice(7)):join(repo,'public',p==='/'?'index.html':p);res.setHeader('Content-Type',({'.js':'text/javascript','.html':'text/html','.css':'text/css','.json':'application/json','.png':'image/png','.svg':'image/svg+xml'})[extname(file)]||'application/octet-stream');createReadStream(file).on('error',()=>res.writeHead(404).end()).pipe(res);}).listen(0,'127.0.0.1');
+const server=createServer((req,res)=>{const p=new URL(req.url,'http://localhost').pathname,file=p==='/worker.js'?bundle:p.startsWith('/model/')?join(model,p.slice(7)):join(repo,'public',p==='/'?'index.html':p);res.setHeader('Content-Type',({'.js':'text/javascript','.html':'text/html','.css':'text/css','.json':'application/json','.png':'image/png','.svg':'image/svg+xml','.wasm':'application/wasm'})[extname(file)]||'application/octet-stream');createReadStream(file).on('error',()=>res.writeHead(404).end()).pipe(res);}).listen(0,'127.0.0.1');
 await new Promise(r=>server.once('listening',r));const origin=`http://127.0.0.1:${server.address().port}`;
-const browser=await chromium.launch({channel:'chrome',headless:false}),results=[];
+const browser=await chromium.launch({channel:'chrome',headless:!process.env.ENSOMI_HEADED}),results=[];
 try{for(const source of ['local','hf'])for(const backend of ['webgpu','wasm']){
  const context=await browser.newContext({viewport:{width:1440,height:1000}});await context.addInitScript(()=>{window.events=[];const W=Worker;window.Worker=class extends W{constructor(...args){super(...args);this.addEventListener('message',({data})=>events.push({...data,t:performance.now()}));}};});const page=await context.newPage();
  for(const warm of [false,true]){

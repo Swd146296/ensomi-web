@@ -3,12 +3,14 @@
 # Run from packages/runtime: tests/browser/speed.sh <label> [repeats] [providers] [songs] [source]
 #   tests/browser/speed.sh after-l1 2 "webgpu wasm" adventure
 # Each run's page JSON is kept under artifacts/speed/runs/; the summary prints per-phase seconds and chart hashes.
+# ENSOMI_SITE serves another build's site directory instead of building this one (tests/browser/build-main.sh).
 set -u
 label=$1 repeats=${2:-1} providers=${3:-"webgpu wasm"} songs=${4:-adventure} source=${5:-local}
 out=artifacts/speed/runs
 mkdir -p "$out"
-npm run build:site || exit 1
-node ../../site/serve.mjs 8087 ../../../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 &
+site=${ENSOMI_SITE:-../../site}
+[ -n "${ENSOMI_SITE:-}" ] || npm run build:site || exit 1
+node "$site/serve.mjs" 8087 ../../../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2 &
 server=$!
 trap 'kill $server' EXIT
 sleep 1

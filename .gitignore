@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.wrangler/
+# built by `npm run build:site` in packages/runtime (wrangler runs it before deploy)
+public/app.js
+public/worker.js
+packages/runtime/artifacts/browser-test/*
+!packages/runtime/artifacts/browser-test/report.md

@@ -1,0 +1,17 @@
+{
+  "stage": 5,
+  "song": "catch-the-moment",
+  "section": "TimingPoints",
+  "row": 0,
+  "line": 15,
+  "field": "beat_length_ms",
+  "reference": 631.3408705468946,
+  "typescript": 631.3408705352042,
+  "difference_ms": -1.1690417522913776e-08,
+  "python_onnx_line": "1659,631.3408705468947,4,2,0,100,1,0",
+  "typescript_from_recorded_features": 631.3408705468947,
+  "sampled_choice_differences": 0,
+  "hitobject_differences": 0,
+  "likely_cause": "Frontend float32 reductions plus double-precision least-squares rounding; full-precision timing serialization exposes differences that do not change chart objects.",
+  "status": "within the stage 5 rule: timing-point values within 1e-6 ms; the full-precision text differs"
+}

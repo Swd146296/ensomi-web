@@ -1,0 +1,32 @@
+import type { FileSource } from './models.js';
+const urls: Record<string, URL> = {
+    'resample-11025-boundary.bin': new URL('../assets/resample-11025-boundary.bin', import.meta.url),
+    'resample-11025.bin': new URL('../assets/resample-11025.bin', import.meta.url),
+    'resample-11025.json': new URL('../assets/resample-11025.json', import.meta.url),
+    'resample-16000-boundary.bin': new URL('../assets/resample-16000-boundary.bin', import.meta.url),
+    'resample-16000.bin': new URL('../assets/resample-16000.bin', import.meta.url),
+    'resample-16000.json': new URL('../assets/resample-16000.json', import.meta.url),
+    'resample-192000-boundary.bin': new URL('../assets/resample-192000-boundary.bin', import.meta.url),
+    'resample-192000.bin': new URL('../assets/resample-192000.bin', import.meta.url),
+    'resample-192000.json': new URL('../assets/resample-192000.json', import.meta.url),
+    'resample-24000-boundary.bin': new URL('../assets/resample-24000-boundary.bin', import.meta.url),
+    'resample-24000.bin': new URL('../assets/resample-24000.bin', import.meta.url),
+    'resample-24000.json': new URL('../assets/resample-24000.json', import.meta.url),
+    'resample-32000-boundary.bin': new URL('../assets/resample-32000-boundary.bin', import.meta.url),
+    'resample-32000.bin': new URL('../assets/resample-32000.bin', import.meta.url),
+    'resample-32000.json': new URL('../assets/resample-32000.json', import.meta.url),
+    'resample-44100-boundary.bin': new URL('../assets/resample-44100-boundary.bin', import.meta.url),
+    'resample-44100.bin': new URL('../assets/resample-44100.bin', import.meta.url),
+    'resample-44100.json': new URL('../assets/resample-44100.json', import.meta.url),
+    'resample-48000-boundary.bin': new URL('../assets/resample-48000-boundary.bin', import.meta.url),
+    'resample-48000.bin': new URL('../assets/resample-48000.bin', import.meta.url),
+    'resample-48000.json': new URL('../assets/resample-48000.json', import.meta.url),
+    'resample-88200-boundary.bin': new URL('../assets/resample-88200-boundary.bin', import.meta.url),
+    'resample-88200.bin': new URL('../assets/resample-88200.bin', import.meta.url),
+    'resample-88200.json': new URL('../assets/resample-88200.json', import.meta.url),
+    'resample-96000-boundary.bin': new URL('../assets/resample-96000-boundary.bin', import.meta.url),
+    'resample-96000.bin': new URL('../assets/resample-96000.bin', import.meta.url),
+    'resample-96000.json': new URL('../assets/resample-96000.json', import.meta.url),
+};
+export const runtimeAssetSource: FileSource = async (path) => { const response = await fetch(urls[path]); if (!response.ok)
+    throw new Error(`Runtime asset download failed: ${path}`); return new Uint8Array(await response.arrayBuffer()); };

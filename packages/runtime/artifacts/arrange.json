@@ -1,0 +1,78 @@
+{
+  "hesitation-snow": {
+    "passed": true,
+    "seconds": 1.019264792,
+    "prior_error": 0,
+    "decisions": 898,
+    "draws": 2172,
+    "passes": [
+      {
+        "multiplier": 1.0115911606943524,
+        "achieved": 1.3455830579580628,
+        "fallback_count": 0,
+        "wall_seconds": 1.0176905410000001
+      }
+    ],
+    "fallbacks": 0
+  },
+  "saigetsu": {
+    "passed": true,
+    "seconds": 1.839191,
+    "prior_error": 0,
+    "decisions": 1572,
+    "draws": 3380,
+    "passes": [
+      {
+        "multiplier": 0.9365579816442061,
+        "achieved": 1.4391102764195374,
+        "fallback_count": 0,
+        "wall_seconds": 0.8346441250000001
+      },
+      {
+        "multiplier": 0.9773466733743711,
+        "achieved": 1.5459112333555236,
+        "fallback_count": 0,
+        "wall_seconds": 1.0030371670000005
+      }
+    ],
+    "fallbacks": 0
+  },
+  "catch-the-moment": {
+    "passed": true,
+    "seconds": 1.727407541,
+    "prior_error": 0,
+    "decisions": 1548,
+    "draws": 3331,
+    "passes": [
+      {
+        "multiplier": 0.9864209795304626,
+        "achieved": 1.437874697048943,
+        "fallback_count": 0,
+        "wall_seconds": 0.8632593749999996
+      },
+      {
+        "multiplier": 1.0305045271308024,
+        "achieved": 1.5244714389179483,
+        "fallback_count": 0,
+        "wall_seconds": 0.8627089999999998
+      }
+    ],
+    "fallbacks": 0
+  },
+  "adventure": {
+    "passed": true,
+    "seconds": 1.8548678749999998,
+    "prior_error": 0,
+    "decisions": 1704,
+    "draws": 3850,
+    "passes": [
+      {
+        "multiplier": 1.0227338165214293,
+        "achieved": 1.502286623823186,
+        "fallback_count": 0,
+        "wall_seconds": 1.8537917079999997
+      }
+    ],
+    "fallbacks": 0
+  }
+}

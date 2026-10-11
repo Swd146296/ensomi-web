@@ -1,4 +1,4 @@
-import type { Chart } from '../packages/runtime/src/types.js';
+import type { Chart } from '../packages/runtime/src/index.js';
 
 /**
  * Live chart inspector modelled on Beatmap Lens's falling-note viewport: chart time is the audio

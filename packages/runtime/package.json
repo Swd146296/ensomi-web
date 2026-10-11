@@ -10,29 +10,30 @@
   },
   "devDependencies": {
     "esbuild": "0.25.9",
-    "onnxruntime-node": "1.23.2",
     "playwright": "1.54.2",
     "tsx": "4.20.6",
     "typescript": "5.9.3"
   },
   "scripts": {
-    "parity": "node --import tsx checks/parity.ts",
-    "build": "tsc",
+    "vendor": "scripts/vendor.sh",
+    "same-as-ts": "node --import tsx checks/same-as-ts.mjs",
     "typecheck": "tsc --noEmit",
-    "build:site": "esbuild ../../site/app.ts ../../site/worker.ts --bundle --format=esm --target=es2022 --minify --outdir=../../public --log-level=warning",
+    "build:site": "esbuild ../../site/app.ts ../../site/worker.ts --bundle --format=esm --target=es2022 --minify --outdir=../../public --log-level=warning && cp pkg/ensomi_generate_wasm_bg.wasm ../../public/ensomi-runtime.wasm",
     "typecheck:site": "tsc -p ../../site",
     "serve:site": "node ../../site/serve.mjs"
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "types": "./src/index.d.ts",
+      "import": "./src/index.js"
     }
   },
-  "types": "./dist/index.d.ts",
+  "types": "./src/index.d.ts",
   "files": [
-    "dist",
+    "src",
+    "pkg",
     "assets",
+    "provenance.json",
     "LICENSE",
     "README.md"
   ]

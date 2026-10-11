@@ -1,5 +1,4 @@
-import { decodeAudio } from '../packages/runtime/src/decode_audio.js';
-import { ControlStatus, PatternKind, type GenerateChartRequest, type GenerationResult, type ModelCapabilities, type SectionRequest } from '../packages/runtime/src/types.js';
+import { ControlStatus, PatternKind, decodeAudio, type GenerateChartRequest, type GenerationResult, type ModelCapabilities, type SectionRequest } from '../packages/runtime/src/index.js';
 import { Player, RATES, VISUAL_SPEEDS } from './player.js';
 
 /** The generator page: model loading, song decoding, conditions, progress, result and inspector. */

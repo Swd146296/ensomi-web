@@ -1,0 +1,630 @@
+{
+  "ort": "1.23.2",
+  "backend": "wasm",
+  "threads": 1,
+  "node": "v26.11.1",
+  "provenance": {
+    "repository": "https://github.com/ensomi-labs/runtime",
+    "commit": "7130c47a9840f02d16a70ca01ab7dcaee98f5499",
+    "build": "scripts/wasm-build.sh",
+    "copied": {
+      "src/": "js/src/",
+      "pkg/": "js/pkg/"
+    },
+    "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
+    "wasm-bindgen": "wasm-bindgen 0.2.129"
+  },
+  "seeds": [
+    0,
+    1,
+    2
+  ],
+  "cases": [
+    {
+      "song": "hesitation-snow",
+      "name": "seed 0",
+      "seed": 0,
+      "objects": 1059,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 20.819174625,
+        "seconds": {
+          "pcm": 2.0817946250000006,
+          "spectrogram": 0.164304208,
+          "beatthis": 16.520434166,
+          "mel": 0.5087068749999999,
+          "grid": 0.2441883749999979,
+          "rows": 0.2851794590000027,
+          "prior": 0.001609334000000672,
+          "arrangement": 0.9845606669999979,
+          "export": 0.0010756250000013097,
+          "total": 20.809018917
+        }
+      },
+      "wasm": {
+        "wall_seconds": 22.112291040999995,
+        "seconds": {
+          "pcm": 2.8338199160000004,
+          "spectrogram": 0.2411113750000004,
+          "beatthis": 16.431754750000003,
+          "mel": 0.6263133330000055,
+          "grid": 0.18787516600000526,
+          "rows": 0.6162941659999996,
+          "prior": 0.0007488329999978305,
+          "arrangement": 1.0987706659999967,
+          "export": 0.0015805830000026617,
+          "total": 22.078994625000004
+        }
+      },
+      "passed": true
+    },
+    {
+      "song": "hesitation-snow",
+      "name": "seed 1",
+      "seed": 1,
+      "objects": 1187,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 20.804921334,
+        "seconds": {
+          "pcm": 2.0868655419999995,
+          "spectrogram": 0.16523308299999917,
+          "beatthis": 16.426662666000002,
+          "mel": 0.503733500000002,
+          "grid": 0.2406374999999971,
+          "rows": 0.26690062500000206,
+          "prior": 0.001536500000001979,
+          "arrangement": 1.0599727090000015,
+          "export": 0.0007746249999981956,
+          "total": 20.773056791000002
+        }
+      },
+      "wasm": {
+        "wall_seconds": 20.511896916999998,
+        "seconds": {
+          "pcm": 1.2109127079999962,
+          "spectrogram": 0.2027593749999942,
+          "beatthis": 16.459085042000005,
+          "mel": 0.6213160419999912,
+          "grid": 0.17883024999999908,
+          "rows": 0.6078457499999931,
+          "prior": 0.0005382079999981215,
+          "arrangement": 1.2111150409999973,
+          "export": 0.0007634160000015982,
+          "total": 20.503006042000003
+        }
+      },
+      "passed": true
+    },
+    {
+      "song": "hesitation-snow",
+      "name": "seed 2",
+      "seed": 2,
+      "objects": 995,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 20.786402333999998,
+        "seconds": {
+          "pcm": 2.0851557089999986,
+          "spectrogram": 0.154268041000003,
+          "beatthis": 16.571213165999986,
+          "mel": 0.5096916670000065,
+          "grid": 0.2297609999999986,
+          "rows": 0.26941541699999655,
+          "prior": 0.0013817500000004657,
+          "arrangement": 0.9255164159999986,
+          "export": 0.0005651250000082655,
+          "total": 20.76815283400001
+        }
+      },
+      "wasm": {
+        "wall_seconds": 20.590453834,
+        "seconds": {
+          "pcm": 1.2104511670000064,
+          "spectrogram": 0.20365241700000478,
+          "beatthis": 16.689211499999992,
+          "mel": 0.6212615829999996,
+          "grid": 0.18045045799999207,
+          "rows": 0.6082932080000027,
+          "prior": 0.0005031669999880251,
+          "arrangement": 1.0579644169999955,
+          "export": 0.0004820000000036089,
+          "total": 20.581704457999994
+        }
+      },
+      "passed": true
+    },
+    {
+      "song": "hesitation-snow",
+      "name": "controls",
+      "seed": 1,
+      "objects": 1297,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 27.464499333,
+        "seconds": {
+          "pcm": 6.953400917000006,
+          "spectrogram": 0.15812762499999372,
+          "beatthis": 16.785452707999998,
+          "mel": 0.5782875419999763,
+          "grid": 0.22912458299999708,
+          "rows": 0.30675545799999965,
+          "prior": 0.06963183300002129,
+          "arrangement": 2.3314767500000015,
+          "export": 0.000917875000013737,
+          "total": 27.447321124999988
+        }
+      },
+      "wasm": {
+        "wall_seconds": 22.374219166000024,
+        "seconds": {
+          "pcm": 1.2087735420000099,
+          "spectrogram": 0.20251820799999404,
+          "beatthis": 16.950825790999982,
+          "mel": 0.6216432499999938,
+          "grid": 0.18053029100000276,
+          "rows": 0.6359203339999949,
+          "prior": 0.021051292000018294,
+          "arrangement": 2.534269540999987,
+          "export": 0.000657666999992216,
+          "total": 22.365012791999995
+        }
+      },
+      "passed": true
+    },
+    {
+      "song": "saigetsu",
+      "name": "seed 0",
+      "seed": 0,
+      "objects": 1295,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 18.423383291000004,
+        "seconds": {
+          "pcm": 1.3480519579999963,
+          "spectrogram": 0.12478616699998384,
+          "beatthis": 14.16920083300001,
+          "mel": 0.41402774999997927,
+          "grid": 0.10416537499998231,
+          "rows": 0.18988933299999916,
+          "prior": 0.0015922079999872948,
+          "arrangement": 2.047953084000008,
+          "export": 0.0007043330000014975,
+          "total": 18.411939667
+        }
+      },
+      "wasm": {
+        "wall_seconds": 20.702020458000014,
+        "seconds": {
+          "pcm": 0.886216791999992,
+          "spectrogram": 0.16440354200001456,
+          "beatthis": 16.353590750000002,
+          "mel": 0.518642125000013,
+          "grid": 0.07678662500000792,
+          "rows": 0.3797314999999944,
+          "prior": 0.0004595409999892581,
+          "arrangement": 2.3064359579999874,
+          "export": 0.0006212919999961741,
+          "total": 20.694309084000007
+        }
+      },
+      "passed": true
+    },
+    {
+      "song": "saigetsu",
+      "name": "seed 1",
+      "seed": 1,
+      "objects": 1168,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 17.791890125000005,
+        "seconds": {
+          "pcm": 1.6147363329999789,
+          "spectrogram": 0.12966399999998976,
+          "beatthis": 14.328457291,
+          "mel": 0.4180871249999909,
+          "grid": 0.10731945899999118,
+          "rows": 0.1886641670000099,
+          "prior": 0.0014181249999965075,
+          "arrangement": 0.9777353750000184,
+          "export": 0.0005196660000074189,
+          "total": 17.778234874999995
+        }
+      },
+      "wasm": {
+        "wall_seconds": 17.477936083000007,
+        "seconds": {
+          "pcm": 0.8824675000000279,
+          "spectrogram": 0.16396279199997663,
+          "beatthis": 14.325219582999999,
+          "mel": 0.5072110000000103,
+          "grid": 0.07689562499997556,
+          "rows": 0.37959625000000236,
+          "prior": 0.00040566600000602193,
+          "arrangement": 1.1282647089999809,
+          "export": 0.0005588750000169966,
+          "total": 17.471127125
+        }
+      },
+      "passed": true
+    },
+    {
+      "song": "saigetsu",
+      "name": "seed 2",
+      "seed": 2,
+      "objects": 1153,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 18.72298425000001,
+        "seconds": {
+          "pcm": 1.5849740419999871,
+          "spectrogram": 0.13892237500002375,
+          "beatthis": 14.322582916000014,
+          "mel": 0.41143524999998043,
+          "grid": 0.10238958300004014,
+          "rows": 0.18981670800002756,
+          "prior": 0.001587375000002794,
+          "arrangement": 1.9458549580000108,
+          "export": 0.0007110830000019632,
+          "total": 18.710461750000018
+        }
+      },
+      "wasm": {
+        "wall_seconds": 18.519683415999985,
+        "seconds": {
+          "pcm": 0.8832319160000188,
+          "spectrogram": 0.16454404199996497,
+          "beatthis": 14.345241584000004,
+          "mel": 0.5021435419999761,
+          "grid": 0.07784329099999741,
+          "rows": 0.3787714159999741,
+          "prior": 0.0004104589999769814,
+          "arrangement": 2.152293458,
+          "export": 0.0005084579999675043,
+          "total": 18.512285875
+        }
+      },
+      "passed": true
+    },
+    {
+      "song": "catch-the-moment",
+      "name": "seed 0",
+      "seed": 0,
+      "objects": 911,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 22.58100895799999,
+        "seconds": {
+          "pcm": 4.66705666599999,
+          "spectrogram": 0.11331087500002468,
+          "beatthis": 14.658876457999984,
+          "mel": 0.5783966669999645,
+          "grid": 0.20200633299996842,
+          "rows": 0.22616337500000372,
+          "prior": 0.0016312079999479465,
+          "arrangement": 2.1077118749999793,
+          "export": 0.000725834000040777,
+          "total": 22.56769624999998
+        }
+      },
+      "wasm": {
+        "wall_seconds": 19.08385608399997,
+        "seconds": {
+          "pcm": 0.8334906249999767,
+          "spectrogram": 0.15751149999996414,
+          "beatthis": 15.21797120899998,
+          "mel": 0.5260812500000466,
+          "grid": 0.1146378750000149,
+          "rows": 0.37337495899997886,
+          "prior": 0.00039633399999001995,
+          "arrangement": 1.8456680829999967,
+          "export": 0.0004969999999739229,
+          "total": 19.07657816700003
+        }
+      },
+      "passed": true
+    },
+    {
+      "song": "catch-the-moment",
+      "name": "seed 1",
+      "seed": 1,
+      "objects": 1002,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 17.953491291999992,
+        "seconds": {
+          "pcm": 1.3018537079999806,
+          "spectrogram": 0.11708925000001909,
+          "beatthis": 14.889318042,
+          "mel": 0.44404591600003185,
+          "grid": 0.14633508300001266,
+          "rows": 0.17956254100002117,
+          "prior": 0.0014702079999842682,
+          "arrangement": 0.8503272909999942,
+          "export": 0.00043279099999926987,
+          "total": 17.941488249999995
+        }
+      },
+      "wasm": {
+        "wall_seconds": 18.537080958000036,
+        "seconds": {
+          "pcm": 0.813025500000047,
+          "spectrogram": 0.15102070799999637,
+          "beatthis": 15.693069125000038,
+          "mel": 0.45539433299994564,
+          "grid": 0.1026160839999793,
+          "rows": 0.3344330830000108,
+          "prior": 0.0003617089999606833,
+          "arrangement": 0.9726155830000062,
+          "export": 0.00046704200003296135,
+          "total": 18.53063591700001
+        }
+      },
+      "passed": true
+    },
+    {
+      "song": "catch-the-moment",
+      "name": "seed 2",
+      "seed": 2,
+      "objects": 1161,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 18.77345629100001,
+        "seconds": {
+          "pcm": 1.2873125829999916,
+          "spectrogram": 0.11640966599999228,
+          "beatthis": 14.666535125000053,
+          "mel": 0.37992841699998825,
+          "grid": 0.13968337500002234,
+          "rows": 0.16950820899999236,
+          "prior": 0.0013829580000019632,
+          "arrangement": 1.988890167000005,
+          "export": 0.0005141670000157319,
+          "total": 18.76237262499996
+        }
+      },
+      "wasm": {
+        "wall_seconds": 24.19154579100001,
+        "seconds": {
+          "pcm": 0.8279410000000498,
+          "spectrogram": 0.14975045900000258,
+          "beatthis": 20.152992290999972,
+          "mel": 0.46758225000003584,
+          "grid": 0.10204550000000745,
+          "rows": 0.33443933399999515,
+          "prior": 0.00039462500001536684,
+          "arrangement": 2.141921624999959,
+          "export": 0.0005621249999967404,
+          "total": 24.184646457999946
+        }
+      },
+      "passed": true
+    },
+    {
+      "song": "adventure",
+      "name": "seed 0",
+      "seed": 0,
+      "objects": 2210,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 31.65040295900003,
+        "seconds": {
+          "pcm": 5.303055541000038,
+          "spectrogram": 0.19917212499998277,
+          "beatthis": 20.911798000000008,
+          "mel": 0.6351497090000193,
+          "grid": 0.3204622920000111,
+          "rows": 0.3239599589999998,
+          "prior": 0.0016986250000190922,
+          "arrangement": 3.86181229099998,
+          "export": 0.0012599170000175946,
+          "total": 31.611390958999984
+        }
+      },
+      "wasm": {
+        "wall_seconds": 30.201959792000007,
+        "seconds": {
+          "pcm": 3.1130169999999926,
+          "spectrogram": 0.24616233300004386,
+          "beatthis": 20.732036040999986,
+          "mel": 0.7842147499999846,
+          "grid": 0.23589179200003854,
+          "rows": 0.6989721249999711,
+          "prior": 0.0006815829999977723,
+          "arrangement": 4.3217021250000105,
+          "export": 0.0008796669999719597,
+          "total": 30.166401625
+        }
+      },
+      "passed": true
+    },
+    {
+      "song": "adventure",
+      "name": "seed 1",
+      "seed": 1,
+      "objects": 2380,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 32.18306708300003,
+        "seconds": {
+          "pcm": 5.523639416999998,
+          "spectrogram": 0.18402229200000875,
+          "beatthis": 20.931740959000017,
+          "mel": 0.6498070409999928,
+          "grid": 0.31415820800000804,
+          "rows": 0.31831641700002367,
+          "prior": 0.0017957089999690653,
+          "arrangement": 4.177292957999977,
+          "export": 0.0011927080000168643,
+          "total": 32.14389362499997
+        }
+      },
+      "wasm": {
+        "wall_seconds": 30.622201,
+        "seconds": {
+          "pcm": 3.054533916000044,
+          "spectrogram": 0.24643887499999256,
+          "beatthis": 20.871558625000006,
+          "mel": 0.7849946670000209,
+          "grid": 0.23589216599997598,
+          "rows": 0.6997865410000086,
+          "prior": 0.0007162500000558793,
+          "arrangement": 4.681695666000014,
+          "export": 0.0008634169999277219,
+          "total": 30.60137845899997
+        }
+      },
+      "passed": true
+    },
+    {
+      "song": "adventure",
+      "name": "seed 2",
+      "seed": 2,
+      "objects": 2515,
+      "chart_equal": true,
+      "osu_equal": true,
+      "receipt_equal": true,
+      "first_osu_difference": null,
+      "first_receipt_difference": null,
+      "runtime_names": [
+        "@ensomi/runtime",
+        "ensomi-runtime"
+      ],
+      "ts": {
+        "wall_seconds": 32.38775116600003,
+        "seconds": {
+          "pcm": 5.564955707999994,
+          "spectrogram": 0.18523766700003763,
+          "beatthis": 21.0106776670001,
+          "mel": 0.6372234999999636,
+          "grid": 0.3202864159999881,
+          "rows": 0.32368087499996184,
+          "prior": 0.0018661670000292361,
+          "arrangement": 4.253735541000031,
+          "export": 0.0012224169999826698,
+          "total": 32.33766912500001
+        }
+      },
+      "wasm": {
+        "wall_seconds": 31.084642333000083,
+        "seconds": {
+          "pcm": 3.09148658399994,
+          "spectrogram": 0.2463027909999946,
+          "beatthis": 21.10662979200005,
+          "mel": 0.7891877500000409,
+          "grid": 0.2370364159999881,
+          "rows": 0.7024514590000035,
+          "prior": 0.0007515410000924021,
+          "arrangement": 4.8618158750000875,
+          "export": 0.0008843330000527203,
+          "total": 31.062542250000057
+        }
+      },
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "ts_load_seconds": 0.447538625,
+  "wasm_load_seconds": 0.38222520800000004,
+  "capabilities_equal": true,
+  "mean_wall_seconds": {
+    "ts": 23.103264080076933,
+    "wasm": 22.769983605615398
+  }
+}

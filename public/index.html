@@ -75,8 +75,11 @@
       <div class="panel" id="conditions">
         <h3><span class="step-num">3</span>Conditions</h3>
         <div class="pair">
-          <label><span class="star-label">Star rating <output id="star-value">3.5</output></span>
-            <input type="range" id="star" min="2" max="5.9" step="0.1" value="3.5"></label>
+          <div class="star">
+            <label><span class="star-label">Star rating <output id="star-value">3.5</output></span>
+              <input type="range" id="star" min="2" max="5.9" step="0.1" value="3.5" aria-describedby="star-note"></label>
+            <p class="small muted" id="star-note">A generated chart can come out easier or harder than the rating asked for; difficulty control will be refined.</p>
+          </div>
           <label>Seed · 0 draws a new one for each chart
             <span class="seed-row"><input type="text" id="seed" inputmode="numeric" value="0" spellcheck="false"><button type="button" class="btn small" id="new-seed">New seed</button></span></label>
         </div>

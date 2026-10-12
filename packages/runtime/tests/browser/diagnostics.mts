@@ -5,7 +5,7 @@ import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createReadStream, statSync } from 'node:fs';
 import { resolve,join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Recording, parseOsu } from '../../../../../ensomi-runtime/js/checks/recording.mjs';
+import { Recording, chartFromDecisions, parseOsu } from '../../../../../ensomi-runtime/js/checks/recording.mjs';
 // The npm package's directory: its decodeAudio, Wasm core (pkg/) and resampler tables (served as /assets/).
 const pkg=fileURLToPath(new URL('..',import.meta.resolve('@ensomi/runtime')));
 const runtime=resolve(import.meta.dirname,'../..'),modelRepo=resolve(runtime,'../../../ensomi-model'),out=join(runtime,'artifacts/browser-test'),bulk=join(out,'bulk');
@@ -16,6 +16,12 @@ await build({entryPoints:[join(pkg,'src/decode_audio.js')],bundle:true,format:'e
 // The page's decoding for exact timing (native rate, the core resamples), for the native mode.
 await build({entryPoints:[join(runtime,'../../site/audio.ts')],bundle:true,format:'esm',target:'es2022',outfile:join(bulk,'audio.js')});
 const recordings=new Map();async function rec(song:string){if(!recordings.has(song))recordings.set(song,await Recording.open(join(modelRepo,'artifacts/runtime-ref/bulk',song)));return recordings.get(song);}
+/** The chart the release's recorded pass-1 decisions make, as ensomi-runtime's js/checks/replay.mjs builds it. */
+async function firstArrangement(r:any){
+ const head=Array.from((await r.event('system/rows')).head_ms,Number),audio=r.index.events.find((e:any)=>e.name==='audio').arrays,actions=[],gaps=[];
+ for(let k=0;k<=head.length;k++){const chosen=await r.event(`r2_pass_1/${k}/chosen`);actions.push(Array.from(chosen.codes,Number));gaps.push(Array.from(chosen.releases,Number));}
+ return chartFromDecisions(head,1000*r.shape(audio.pcm)[0]/Number((await r.get(audio.sample_rate))[0]),actions,gaps);
+}
 const server=createServer(async(req,res)=>{try{const p=new URL(req.url!,'http://localhost').pathname;let file;
  if(p==='/'){res.setHeader('Content-Type','text/html');res.end('<title>Ensomi browser diagnostics</title><h1>Ensomi runtime browser diagnostics</h1>');return;}
  if(p==='/diagnostics.js'||p==='/decode.js'||p==='/audio.js')file=join(bulk,p.slice(1));
@@ -31,8 +37,11 @@ const server=createServer(async(req,res)=>{try{const p=new URL(req.url!,'http://
   }
   if(kind==='array'){const spec=r.index.arrays[Number(id)];res.setHeader('Content-Type','application/octet-stream');createReadStream(join(modelRepo,'artifacts/runtime-ref/bulk',song,'arrays.bin'),{start:spec.byte_offset,end:spec.byte_offset+spec.nbytes-1}).pipe(res);return;}
   if(kind==='network'){const seen=new Set(),calls=r.index.graphs.filter(c=>{if(seen.has(c.name))return false;seen.add(c.name);return true;});res.end(JSON.stringify(calls.map(c=>({...c,inputs:Object.fromEntries(Object.entries(c.inputs).map(([n,id])=>[n,{id,...r.index.arrays[id]}])),outputs:Object.fromEntries(Object.entries(c.outputs).map(([n,id])=>[n,{id,...r.index.arrays[id]}]))}))));return;}
-  if(kind==='compact'){const summary=JSON.parse(await readFile(join(modelRepo,'artifacts/runtime-ref',song,'summary.json'),'utf8'));const draws=[];for(const d of r.index.draws)draws.push({...d,values:Array.from(await r.get(d.values),Number)});
-   const compact={star:summary.settings.star,draws,objects:parseOsu(await readFile(join(modelRepo,'artifacts/runtime-ref/bulk',song,'reference/generated.osu'),'utf8'))};res.end(JSON.stringify(compact));return;}
+  if(kind==='compact'){
+   // The runtime arranges once. Where the release arranged a second time, its pass-2 draws are left out and the reference is its first arrangement.
+   const summary=JSON.parse(await readFile(join(modelRepo,'artifacts/runtime-ref',song,'summary.json'),'utf8')),pass2=(d:any)=>d.name.startsWith('r2_pass_2/'),releasePasses=r.index.draws.some(pass2)?2:1;
+   const draws=[];for(const d of r.index.draws)if(!pass2(d))draws.push({...d,values:Array.from(await r.get(d.values),Number)});
+   const compact={star:summary.settings.star,releasePasses,draws,objects:releasePasses===2?await firstArrangement(r):parseOsu(await readFile(join(modelRepo,'artifacts/runtime-ref/bulk',song,'reference/generated.osu'),'utf8'))};res.end(JSON.stringify(compact));return;}
  }
  if(!file){res.writeHead(404).end();return;}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.json')?'application/json':file.endsWith('.wasm')?'application/wasm':'application/octet-stream');createReadStream(file).pipe(res);
 }catch(e){res.writeHead(500).end(String(e));}}).listen(0,'127.0.0.1');

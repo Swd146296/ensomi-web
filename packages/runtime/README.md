@@ -48,11 +48,9 @@ shortening (`site/player.ts`).
 
 Replay parity with the Python release is checked in ensomi-runtime (`conformance/generate/wasm-parity.json`) and in
 the browser by `tests/browser/diagnostics.mts wasm control` (recorded Python PCM) and `wasm native` (the page's
-exact-timing decoding of the original audio files). On Hesitation Snow and Adventure every recorded draw is consumed
-and all 3,771 hit objects equal the release charts'. The release arranged SaiGetsu and Catch the Moment a second time,
-which the runtime does not: there the replay consumes the draws through the first arrangement (1,805 of 3,380 and
-1,767 of 3,331) and the chart differs from the release's. ensomi-runtime checks those two against the release's first
-arrangement.
+exact-timing decoding of the original audio files): all 6,028 hit objects and every draw the runtime makes on the four
+songs. The runtime arranges a song once; where the release arranged it a second time (SaiGetsu and Catch the Moment),
+the reference is the chart of the release's first arrangement, as in ensomi-runtime's `js/checks/replay.mjs`.
 
 The browser tests and their results are in `tests/browser/README.md` and `artifacts/browser-test/report.md`.
 

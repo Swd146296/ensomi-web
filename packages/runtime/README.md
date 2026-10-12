@@ -1,14 +1,14 @@
 # Runtime checks
 
-The page generates with [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) 0.1.1 from npm, the
+The page generates with [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) 0.2.0 from npm, the
 WebAssembly build of Ensomi's shared Rust runtime ([ensomi-labs/runtime](https://github.com/ensomi-labs/runtime),
-tag `v0.1.1`) and its JavaScript API over ONNX Runtime Web. The repository root's `package.json` pins it exactly; the
+tag `v0.2.0`) and its JavaScript API over ONNX Runtime Web. The repository root's `package.json` pins it exactly; the
 package's README documents the API. This directory holds the checks of that runtime in this site, the browser tests
 and their results. Apache-2.0.
 
 The package replaced a vendored copy of the same build, which had replaced the TypeScript runtime of main `9d8e725`.
-Given the same inputs the Wasm and TypeScript runtimes produce the same charts, `.osu` text and receipts, apart from
-the runtime's name (see Checks).
+From 0.2.0 the runtime arranges a song once. The TypeScript runtime, like the Python release, arranged it a second
+time when the first arrangement missed the star's difficulty target, so their charts differ wherever it did.
 
 ## How the page uses it
 
@@ -24,6 +24,8 @@ the runtime's name (see Checks).
   soxr table for that rate, fetched from `public/resampler/`, and to the rows model's 24000 Hz by linear
   interpolation, as the Python release does. The report gives the drift and the cost both ways
   (`artifacts/browser-test/report.md`).
+- The page generates the whole chart with `generateChart` and plays it afterwards; it does not use the package's
+  streaming API (`prepare`, `Prepared`, `ChartScheduler`).
 - Seeds drive the runtime's `mulberry32-u53-v1` generator, not Python's RNG, so a seed does not give the command
   line's chart. The page draws a random seed for seed 0 and shows the seed used.
 
@@ -36,17 +38,8 @@ Run from this directory, with the sibling `ensomi-model` (release model, runtime
 npm run typecheck              # the package's index.d.ts against onnxruntime-web's types
 npm run typecheck:site
 npm run build:site
-tests/browser/build-main.sh    # main 9d8e725's TypeScript runtime and page, into artifacts/bulk/main
-npm run same-as-ts             # writes artifacts/same-as-ts.json
 node --import tsx checks/ln-gaps.mjs   # writes artifacts/ln-gaps.json
 ```
-
-`same-as-ts` runs the npm package and the TypeScript runtime of main `9d8e725` in Node on onnxruntime-web's WASM
-backend with one thread, on the recorded PCM of the four release songs with seeds 0, 1 and 2, plus a controls case
-(Hesitation Snow, seed 1, half long notes and three sections). It compares charts, `.osu` text and receipts after
-normalising only the runtime name and the wall-clock fields. The core computes `exp`, `log` and the other
-transcendental functions with Rust's `libm` crate, where the TypeScript runtime used V8's `Math`; their last bits can
-differ, which on other input could show in receipt digits or, at a near-tie, a sampled choice.
 
 `ln-gaps` generates the four release songs from their recorded PCM with seeds 0 to 4, reads the Python release charts,
 and counts long-note tails at or after the next head in their lane, gaps under the inspector's drawn head height per
@@ -55,15 +48,16 @@ shortening (`site/player.ts`).
 
 Replay parity with the Python release is checked in ensomi-runtime (`conformance/generate/wasm-parity.json`) and in
 the browser by `tests/browser/diagnostics.mts wasm control` (recorded Python PCM) and `wasm native` (the page's
-exact-timing decoding of the original audio files): all 6,178 hit objects and every recorded draw on the four songs.
+exact-timing decoding of the original audio files): all 6,028 hit objects and every draw the runtime makes on the four
+songs. The runtime arranges a song once; where the release arranged it a second time (SaiGetsu and Catch the Moment),
+the reference is the chart of the release's first arrangement, as in ensomi-runtime's `js/checks/replay.mjs`.
 
 The browser tests and their results are in `tests/browser/README.md` and `artifacts/browser-test/report.md`.
 
 ## Files
 
-- `checks/same-as-ts.mjs`: the Node comparison with the TypeScript runtime.
 - `checks/ln-gaps.mjs`: long-note tails against the next head in their lane.
 - `checks/resampler_coefficients.py`: how the soxr tables now shipped in the package's `resampler/` were made; it
   writes them to `assets/` here, for comparison.
 - `tests/browser/`: the page and runtime tests in Chrome.
-- `artifacts/`: `same-as-ts.json`, the browser-test report and the speed report of #4.
+- `artifacts/`: `ln-gaps.json`, the browser-test report and the speed report of #4.

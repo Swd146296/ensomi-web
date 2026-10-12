@@ -11,9 +11,10 @@ const out=join(runtime,'artifacts/browser-test'), bulk=join(out,'bulk');
 const backend=process.argv[2]||'webgpu', source=process.argv[3]||'local', base=process.env.ENSOMI_TEST_URL||'http://127.0.0.1:8087';
 const model=process.env.ENSOMI_MODEL_DIR||join(modelRepo,'artifacts/release-r2/bulk/hf/ensomi-r2');
 const allSongs=[['catch-the-moment','576112','mp3',3.5],['adventure','2202551','ogg',4.5],['hesitation-snow','2486779','ogg',2.5],['saigetsu','1403084','mp3',3.5]];
-const selectedSong=process.argv[4];const songs=selectedSong?allSongs.filter(s=>s[0]===selectedSong):allSongs;const reportSuffix=selectedSong?`-${selectedSong}`:'';
+const selectedSong=process.argv[4];const songs=selectedSong?allSongs.filter(s=>s[0]===selectedSong):allSongs;
+const exact=process.env.ENSOMI_EXACT==='1';const reportSuffix=(selectedSong?`-${selectedSong}`:'')+(exact?'-exact':'');
 await mkdir(bulk,{recursive:true});await mkdir(join(out,'screenshots'),{recursive:true});
-const report={backend,source,started:new Date().toISOString(),loads:[],runs:[],errors:[]};
+const report={backend,source,exact,started:new Date().toISOString(),loads:[],runs:[],errors:[]};
 const save=()=>writeFile(join(out,`page-${backend}-${source}${reportSuffix}.json`),JSON.stringify(report,null,2));
 const browser=await chromium.launch({channel:'chrome',headless:!process.env.ENSOMI_HEADED,args:['--disable-background-timer-throttling','--disable-renderer-backgrounding','--enable-precise-memory-info',...(process.env.ENSOMI_CHROME_ARGS?.split(' ')??[])]});
 report.chromeVersion=browser.version();
@@ -35,6 +36,9 @@ async function load(warm){
  const url=new URL(base);if(source!=='hf')url.searchParams.set('model','/model/onnx/');if(backend==='wasm')url.searchParams.set('backend','wasm');
  await page.goto(url.href);await page.bringToFront();
  if(!report.environment)report.environment=await page.evaluate(async()=>{const a=await navigator.gpu?.requestAdapter();return{ua:navigator.userAgent,hardwareConcurrency:navigator.hardwareConcurrency,deviceMemory:navigator.deviceMemory,gpu:a?{vendor:a.info.vendor,architecture:a.info.architecture,device:a.info.device,description:a.info.description}:null};});
+ // Exact timing is off by default, read from the control; ENSOMI_EXACT=1 turns it on for every generation.
+ report.exactDefault=await page.locator('#exact').isChecked();if(report.exactDefault)process.exitCode=1;
+ if(exact)await page.locator('#exact').check();
  if(source==='folder'){await page.locator('input[value="folder"]').check();await page.locator('#folder').setInputFiles(join(model,'onnx'));}
  const start=performance.now();await page.locator('#load').click();await page.waitForFunction(()=>__test.events.some(e=>['loaded','error'].includes(e.type)),null,{timeout:300000});
  const data=await page.evaluate(()=>({events:__test.events,heapPeak:__test.heapPeak,status:document.querySelector('#model-status').textContent,error:document.querySelector('#error').textContent}));
@@ -52,7 +56,7 @@ async function generate(song,warm,section=false,seed='1',tag=''){
  await page.locator('#generate-button').click();
  await page.waitForFunction(({index,eventStart})=>__test.results.length>index||__test.events.slice(eventStart).some(e=>e.type==='error'),{index,eventStart},{timeout:600000});
  const wallSeconds=(performance.now()-started)/1000;
- const data=await page.evaluate(index=>{const r=__test.results[index];return {chart:r?.chart,receipt:r?.receipt,events:__test.events,decodes:__test.decodes,status:document.querySelector('#song-status').textContent,error:document.querySelector('#error').hidden?null:document.querySelector('#error').textContent,seedShown:[...document.querySelectorAll('#receipt dt')].find(d=>d.textContent==='Seed')?.nextElementSibling.textContent,seedField:document.querySelector('#seed').value,heapPeak:__test.heapPeak,table:[...document.querySelectorAll('#times tr')].map(x=>x.innerText)};},index);
+ const data=await page.evaluate(index=>{const r=__test.results[index];return {chart:r?.chart,receipt:r?.receipt,events:__test.events,decodes:__test.decodes,status:document.querySelector('#song-status').textContent,error:document.querySelector('#error').hidden?null:document.querySelector('#error').textContent,seedShown:[...document.querySelectorAll('#receipt dt')].find(d=>d.textContent==='Seed')?.nextElementSibling.textContent,timingShown:[...document.querySelectorAll('#receipt dt')].find(d=>d.textContent==='Timing')?.nextElementSibling.textContent,seedField:document.querySelector('#seed').value,heapPeak:__test.heapPeak,table:[...document.querySelectorAll('#times tr')].map(x=>x.innerText)};},index);
  const label=`${backend}-${source}${reportSuffix}-${warm?'warm':'cold'}-${slug}${section?'-section':''}${tag}`;
  const row={song:slug,warm,section,star,seed:data.receipt?.seed,decodeWallSeconds,wallSeconds,...data};
  if(data.chart){
@@ -61,7 +65,9 @@ async function generate(song,warm,section=false,seed='1',tag=''){
   const archive=unzipSync(await readFile(join(bulk,`${label}.osz`)));const audioKey=Object.keys(archive).find(k=>k.startsWith('audio.'));
   row.archive={names:Object.keys(archive),audioExact:Buffer.from(archive[audioKey]).equals(await readFile(audioPath)),osuExact:strFromU8(archive['generated.osu'])===await readFile(join(bulk,`${label}.osu`),'utf8'),receiptExact:strFromU8(archive['receipt.json']).trim()===data.receipt.receipt_json};
   await writeFile(join(bulk,`${label}-chart.json`),JSON.stringify(data.chart));delete row.chart;delete row.receipt;
- }if(row.error||row.validation?.length||row.archive&&Object.values(row.archive).some(v=>v===false))process.exitCode=1;report.runs.push(row);await save();console.log('RUN',label,wallSeconds,row.detail?.seconds,row.error,row.validation?.length);
+ }if(row.error||row.validation?.length||row.archive&&Object.values(row.archive).some(v=>v===false))process.exitCode=1;
+ // With exact timing the core converts the rate (receipt stage pcm above 0) and the receipt list has a Timing row; without, no Timing row.
+ if(exact?!(row.detail?.seconds.pcm>0&&row.timingShown):row.timingShown!==undefined)process.exitCode=1;report.runs.push(row);await save();console.log('RUN',label,wallSeconds,row.detail?.seconds,row.error,row.validation?.length);
  await page.locator(data.chart?'#result':'#error').screenshot({path:join(out,`screenshots/${label}.png`)});
  return row;
 }

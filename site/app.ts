@@ -1,4 +1,5 @@
 import { ControlStatus, PatternKind, decodeAudio, type GenerateChartRequest, type GenerationResult, type ModelCapabilities, type SectionRequest } from '@ensomi/runtime';
+import { decodeSong } from './audio.js';
 import { Player, RATES, VISUAL_SPEEDS } from './player.js';
 
 /** The generator page: model loading, song decoding, conditions, progress, result and inspector. */
@@ -14,7 +15,7 @@ const RECEIPT_TIMES: [string, string][] = [['pcm', 'Prepare PCM'], ['spectrogram
 
 interface Song { file: File; buffer: ArrayBuffer; mel: Float32Array; beatthis: Float32Array; durationMs: number; decodeSeconds: number }
 interface SectionDraft { start: string; end: string; kind: string; strength: number; star: number }
-interface Job { song: Song; title: string; artist: string; seed: number | bigint; random: boolean; star: number; sections: SectionRequest[] }
+interface Job { song: Song; title: string; artist: string; seed: number | bigint; random: boolean; star: number; sections: SectionRequest[]; exact?: { rate: number; decodeSeconds: number } }
 
 let worker: Worker | undefined, caps: ModelCapabilities | undefined, provider = '', threads = 1, loadSeconds = 0, loading = false;
 let song: Song | undefined, job: Job | undefined, generating = false, timer = 0;
@@ -249,7 +250,7 @@ function update() {
 }
 
 // Generate
-$('generate-button').addEventListener('click', () => {
+$('generate-button').addEventListener('click', async () => {
     if (!song || !caps) return;
     const requests = sectionRequests(), entered = seedValue();
     if (typeof requests === 'string' || entered === undefined) return;
@@ -264,7 +265,13 @@ $('generate-button').addEventListener('click', () => {
     update();
     $('run-status').textContent = `Generating on ${providerName(provider)}…`;
     const request: GenerateChartRequest = { audio: { asset_id: song.file.name }, star: job.star, seed, controls: { sections: requests }, title, ...(artist ? { artist } : {}) };
-    worker!.postMessage({ type: 'generate', mel: song.mel, beatthis: song.beatthis, request, audio: { name: song.file.name, bytes: new Uint8Array(song.buffer) } });
+    const audio = { name: song.file.name, bytes: new Uint8Array(song.buffer) };
+    if (!field('exact').checked)
+        return worker!.postMessage({ type: 'generate', mel: song.mel, beatthis: song.beatthis, request, audio });
+    // Exact timing: the song again at its own rate, which the core converts as the Python release does (site/audio.ts).
+    const start = performance.now(), { pcm, rate } = await decodeSong(song.buffer);
+    job.exact = { rate, decodeSeconds: (performance.now() - start) / 1000 };
+    worker!.postMessage({ type: 'generate', pcm, rate, request, audio }, [pcm.buffer]);
 });
 
 function markPhase(next: number) {
@@ -317,13 +324,14 @@ function showResult(result: GenerationResult) {
         ['Tempo', detail.rows.segments.map((s: number[]) => (60000 / s[1]).toFixed(1)).join(', ') + ' BPM'],
         ['Sections', done.sections.length ? String(done.sections.length) : 'none'],
     ];
+    if (done.exact) facts.push(['Timing', `exact, from ${done.exact.rate} Hz`]);
     $('receipt').replaceChildren(...facts.flatMap(([label, value]) => {
         const dt = document.createElement('dt'), dd = document.createElement('dd');
         dt.textContent = label;
         dd.textContent = value;
         return [dt, dd];
     }));
-    const rows: [string, number, boolean?][] = [['Model load', loadSeconds], ['Audio decode', done.song.decodeSeconds], ...RECEIPT_TIMES.map(([key, label]): [string, number] => [label, detail.seconds[key]]), ['Generation total', detail.seconds.total, true]];
+    const rows: [string, number, boolean?][] = [['Model load', loadSeconds], ['Audio decode', done.song.decodeSeconds], ...(done.exact ? [['Exact-timing decode', done.exact.decodeSeconds] as [string, number]] : []), ...RECEIPT_TIMES.map(([key, label]): [string, number] => [label, detail.seconds[key]]), ['Generation total', detail.seconds.total, true]];
     $('times').replaceChildren(...rows.map(([label, seconds, total]) => {
         const tr = document.createElement('tr'), th = document.createElement('th'), td = document.createElement('td');
         th.scope = 'row';

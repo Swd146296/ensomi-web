@@ -1,8 +1,8 @@
 # Runtime checks
 
-The page generates with [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) 0.1.0 from npm, the
+The page generates with [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) 0.1.1 from npm, the
 WebAssembly build of Ensomi's shared Rust runtime ([ensomi-labs/runtime](https://github.com/ensomi-labs/runtime),
-tag `v0.1.0`) and its JavaScript API over ONNX Runtime Web. The repository root's `package.json` pins it exactly; the
+tag `v0.1.1`) and its JavaScript API over ONNX Runtime Web. The repository root's `package.json` pins it exactly; the
 package's README documents the API. This directory holds the checks of that runtime in this site, the browser tests
 and their results. Apache-2.0.
 
@@ -12,12 +12,17 @@ the runtime's name (see Checks).
 
 ## How the page uses it
 
-- `site/worker.ts` calls `loadModels` with the core copied to `public/ensomi-runtime.wasm` by `npm run build:site`,
-  since bundling moves the module away from the package's own files.
-- `site/app.ts` decodes the song with the package's `decodeAudio`: WebAudio decodes it at 24000 and 22050 Hz, and the
-  worker passes both streams to `generateChart`, so the core converts no rate and reads no resampler table. WebAudio's
-  resampler is not the Python release's, which moves the beat grid by up to 1.3 ms against the release charts; the
-  report gives the drift and why the page does not decode at the file's own rate instead
+- `site/worker.ts` calls `loadModels` with the core copied to `public/ensomi-runtime.wasm` and the package's soxr
+  resampler tables copied to `public/resampler/` (both by `npm run build:site`), since bundling moves the module away
+  from the package's own files.
+- By default `site/app.ts` decodes the song with the package's `decodeAudio`: WebAudio decodes it at 24000 and
+  22050 Hz, and the worker passes both streams to `generateChart`, so the core converts no rate and reads no resampler
+  table. WebAudio's resampler is not the Python release's, which moves the beat grid by up to 1.3 ms against the
+  release charts.
+- With the Exact timing option on, `site/audio.ts` decodes the song again at the file's own sample rate, read from its
+  header, and the worker passes that mono PCM to `generateChart`. The core converts it to BeatThis's 22050 Hz with the
+  soxr table for that rate, fetched from `public/resampler/`, and to the rows model's 24000 Hz by linear
+  interpolation, as the Python release does. The report gives the drift and the cost both ways
   (`artifacts/browser-test/report.md`).
 - Seeds drive the runtime's `mulberry32-u53-v1` generator, not Python's RNG, so a seed does not give the command
   line's chart. The page draws a random seed for seed 0 and shows the seed used.
@@ -49,8 +54,8 @@ visual speed, and gaps in which the drawn tail cap reaches into the next head wi
 shortening (`site/player.ts`).
 
 Replay parity with the Python release is checked in ensomi-runtime (`conformance/generate/wasm-parity.json`) and in
-the browser by `tests/browser/diagnostics.mts wasm control` (recorded Python PCM): all 6,178 hit objects and every
-recorded draw on the four songs.
+the browser by `tests/browser/diagnostics.mts wasm control` (recorded Python PCM) and `wasm native` (the page's
+exact-timing decoding of the original audio files): all 6,178 hit objects and every recorded draw on the four songs.
 
 The browser tests and their results are in `tests/browser/README.md` and `artifacts/browser-test/report.md`.
 

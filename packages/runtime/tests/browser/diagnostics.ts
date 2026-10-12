@@ -41,7 +41,7 @@ onmessage=async({data})=>{try{
   // The core stops at the first draw whose name or chosen index differs from the recording; its message is the first divergence.
   const {song}=data,ref=await json(`/ref/${song}/compact`),replay=new models.core.ReplayDraws();
   for(const d of ref.draws)replay.add(d.name,d.kind,Float64Array.from(d.values),d.chosen);
-  let result,error;let pcm:any={samples:data.mel,channels:1,mel:data.mel,beatthis:data.beatthis},sampleRate=24000;
+  let result,error;let pcm:any=data.pcm??{samples:data.mel,channels:1,mel:data.mel,beatthis:data.beatthis},sampleRate=data.rate??24000;
   if(data.referencePCM){const meta=await json(`/ref/${song}/audio-meta`);pcm={samples:new Float64Array((await get(`/ref/${song}/array/0`)).buffer),channels:meta.channels,mel:new Float32Array((await get(`/ref/${song}/array/2`)).buffer)};sampleRate=meta.rate;}
   try{result=await generateChart(models,pcm,sampleRate,{audio:{asset_id:song},star:ref.star,seed:0},{replay});}catch(e){error=String(e);}
   const objects=result?.chart.objects;out('replay-result',{song,drawsConsumed:result?.replayConsumed,drawsExpected:ref.draws.length,objectsEqual:objects?JSON.stringify(objects)===JSON.stringify(ref.objects):false,objectCount:objects?.length,expectedObjects:ref.objects.length,firstObjectDifference:objects?.findIndex((o:any,i:number)=>JSON.stringify(o)!==JSON.stringify(ref.objects[i])),error,seconds:result?JSON.parse(result.receipt.receipt_json).seconds:undefined});

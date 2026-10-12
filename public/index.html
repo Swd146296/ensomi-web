@@ -80,6 +80,10 @@
           <label>Seed · 0 draws a new one for each chart
             <span class="seed-row"><input type="text" id="seed" inputmode="numeric" value="0" spellcheck="false"><button type="button" class="btn small" id="new-seed">New seed</button></span></label>
         </div>
+        <div class="exact">
+          <label><input type="checkbox" id="exact" aria-describedby="exact-note"> Exact timing</label>
+          <p class="small muted" id="exact-note">Decodes the song at its own sample rate and converts it as the Python release does, so beat times match the release to within a few thousandths of a millisecond instead of up to about 1.3 ms. Adds about half a second per song, more for high-sample-rate files (about 1.3 s at 96 kHz).</p>
+        </div>
         <div class="sections">
           <h4>Sections <span class="muted small">optional</span></h4>
           <p class="small muted">Ask for a style or a star target in one span of the song. Use mm:ss. Each section lasts 8–32 seconds, stays inside the song and does not overlap another; one may start where another ends.</p>

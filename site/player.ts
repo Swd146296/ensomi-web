@@ -6,7 +6,7 @@ import type { Chart } from '../packages/runtime/src/index.js';
  * seeks to the time under the pointer, a drag scrubs, the wheel and Up/Down navigate, and a
  * vertical overview (bottom = song start) shows note density, the visible window and the playhead.
  */
-export const VISUAL_SPEEDS = [120, 240, 480, 720];
+export const VISUAL_SPEEDS = [240, 480, 720, 960];
 export const RATES = [0.5, 0.75, 1, 1.25, 1.5];
 const JUDGE = 0.82, ARROW_STEP_PX = 40, DENSITY_BINS = 256;
 const color = {
@@ -47,7 +47,7 @@ function lowerBound(values: number[], x: number) {
 const clamp = (x: number, lo: number, hi: number) => Math.min(Math.max(x, lo), hi);
 
 export class Player {
-    speed = 240;
+    speed = 720;
     private track?: Track;
     private starts: number[] = [];
     private longest = 0;

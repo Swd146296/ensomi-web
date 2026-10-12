@@ -32,16 +32,18 @@ export async function playerChecks(page,out){
  const current=()=>page.evaluate(()=>document.querySelector('#audio').currentTime*1000);
  const reset=async()=>{await page.evaluate(()=>{const a=document.querySelector('#audio');a.pause();a.currentTime=60;});await page.waitForTimeout(100);};
  const check=async(name,expected,fn)=>{await reset();await fn();await page.waitForTimeout(120);const actual=await current();result[name]={expectedMs:expected,actualMs:actual,errorMs:actual-expected,clock:await page.locator('#clock').textContent()};};
+ // Expected times follow the visual speed selected on the page.
+ const speed=await page.evaluate(()=>Number(document.querySelector('#speeds [aria-pressed="true"]').textContent));
  const rect=await page.locator('#lanes').boundingBox(),ov=await page.locator('#overview').boundingBox();
  await check('right',65000,async()=>{await page.locator('#lanes').focus();await page.keyboard.press('ArrowRight');});
  await check('left',55000,async()=>{await page.locator('#lanes').focus();await page.keyboard.press('ArrowLeft');});
- await check('up',60000+40/240*1000,async()=>{await page.locator('#lanes').focus();await page.keyboard.press('ArrowUp');});
- await check('down',60000-40/240*1000,async()=>{await page.locator('#lanes').focus();await page.keyboard.press('ArrowDown');});
- await check('click',61000,async()=>page.mouse.click(rect.x+100,rect.y+rect.height*.82-240));
- await check('drag',60500,async()=>{await page.mouse.move(rect.x+100,rect.y+300);await page.mouse.down();await page.mouse.move(rect.x+100,rect.y+180,{steps:10});await page.mouse.up();});
+ await check('up',60000+40/speed*1000,async()=>{await page.locator('#lanes').focus();await page.keyboard.press('ArrowUp');});
+ await check('down',60000-40/speed*1000,async()=>{await page.locator('#lanes').focus();await page.keyboard.press('ArrowDown');});
+ await check('click',60000+240/speed*1000,async()=>page.mouse.click(rect.x+100,rect.y+rect.height*.82-240));
+ await check('drag',60000+120/speed*1000,async()=>{await page.mouse.move(rect.x+100,rect.y+300);await page.mouse.down();await page.mouse.move(rect.x+100,rect.y+180,{steps:10});await page.mouse.up();});
  await page.evaluate(()=>{window.__wheelEvents=[];document.querySelector('#lanes').addEventListener('wheel',e=>__wheelEvents.push({deltaY:e.deltaY,deltaMode:e.deltaMode}),{capture:true});});
- await check('wheel',59500,async()=>{await page.mouse.move(rect.x+100,rect.y+300);await page.mouse.wheel(0,120);});
- result.wheel.events=await page.evaluate(()=>window.__wheelEvents);result.wheel.expectedFromDeliveredEventsMs=60000-result.wheel.events.reduce((a,e)=>a+e.deltaY,0)/240*1000;result.wheel.errorFromDeliveredEventsMs=result.wheel.actualMs-result.wheel.expectedFromDeliveredEventsMs;
+ await check('wheel',60000-120/speed*1000,async()=>{await page.mouse.move(rect.x+100,rect.y+300);await page.mouse.wheel(0,120);});
+ result.wheel.events=await page.evaluate(()=>window.__wheelEvents);result.wheel.expectedFromDeliveredEventsMs=60000-result.wheel.events.reduce((a,e)=>a+e.deltaY,0)/speed*1000;result.wheel.errorFromDeliveredEventsMs=result.wheel.actualMs-result.wheel.expectedFromDeliveredEventsMs;
  const duration=await page.evaluate(()=>__test.results.at(-1).chart.duration_ms);
  await check('overview',duration*.5,async()=>page.mouse.click(ov.x+ov.width*.5,ov.y+ov.height*.5));
  await check('restart',0,async()=>page.locator('#restart').click());

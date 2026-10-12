@@ -4,15 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ensomi: play the music around you</title>
-<meta name="description" content="ensomi R2 turns a song into a playable osu!mania 4K chart, generated in your browser. What it does today, what it does not do yet, and how to run it.">
+<meta name="description" content="ensomi turns music you listen to into music you play. Try R2, our first publicly playable release: choose a song and get an osu!mania 4K chart, made in your browser. Then see what we are building next.">
 <meta name="theme-color" content="#1c1525">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <meta property="og:title" content="ensomi: play the music around you">
-<meta property="og:description" content="A song in, a playable osu!mania 4K chart out, generated in your browser. Research release, with its limits stated.">
-<meta property="og:image" content="https://ensomi.app/img/saigetsu.png">
+<meta property="og:description" content="Choose a song and get a playable osu!mania 4K chart, made in your browser. Our first publicly playable release, and what we are building next.">
+<meta property="og:image" content="https://ensomi.app/img/icon.webp">
 <meta property="og:url" content="https://ensomi.app/">
 <link rel="stylesheet" href="/styles.css">
 <script type="module" src="/app.js"></script>
@@ -26,24 +26,36 @@
       <nav aria-label="Sections">
         <a href="#generate" class="desktop-only">Generate</a>
         <a href="#r2">R2</a>
-        <a href="#previews">Previews</a>
-        <a href="#status">What works</a>
+        <a href="#aim">Vision</a>
+        <a href="#r3">R3</a>
         <a href="#run">Run it</a>
         <a href="#licences">Licences</a>
       </nav>
     </header>
     <div class="hero">
       <img class="hero-icon" src="/img/icon.webp" width="576" height="576" alt="">
-      <p class="eyebrow">R2 · research release</p>
+      <p class="eyebrow">R2 · first publicly playable release</p>
       <h1><span class="name">ensomi</span> — Play the music around you.</h1>
       <p class="jp" lang="ja">えんそみ — 聴く音楽から、参加する音楽へ。</p>
-      <p class="lede">R2 turns a song into an osu!mania 4K chart, here in your browser. Load the model, choose a song and a star rating, then play the chart back against the music. The song never leaves your computer.</p>
+      <p class="lede">Choose a song you love, and R2 charts it for you here in your browser. Watch the chart run against the music, then take it into osu! and play it yourself. The song never leaves your computer.</p>
+      <div class="actions">
+        <a class="btn primary big desktop-only" href="#generate">Make a chart</a>
+        <a class="btn big" href="#aim">What we are building</a>
+      </div>
     </div>
   </div>
 </div>
 
 <div class="wrap">
   <main id="main">
+    <section id="why">
+      <h2>Why we are building ensomi</h2>
+      <div class="prose statement">
+        <p>Most of the time, music is something we listen to. A rhythm game lets you step inside a song: your hands follow the beat, and listening turns into playing. But a song becomes playable only after someone charts it by hand, note by note, and most of the music in your life never gets a chart.</p>
+        <p>We want to change that. ensomi learns from charts that mappers have made and writes new ones from the audio, so that the music you love, and the music already around you, can become something you play.</p>
+      </div>
+    </section>
+
     <p class="desktop-note">The chart generator needs a desktop browser. Open this page on a computer to load the model, choose a song and generate a chart.</p>
     <section id="generate" class="tool" aria-labelledby="generate-title">
       <h2 id="generate-title" class="visually-hidden">Generate a chart</h2>
@@ -142,118 +154,78 @@
     </section>
 
     <section id="r2">
-      <h2>R2: from a song to a playable chart</h2>
-      <p class="prose">Give R2 an audio file and a star rating from 2 to under 6, and it writes a complete osu!mania 4K chart that opens in osu!.</p>
+      <h2>R2: from a song to a chart you can play</h2>
+      <p class="prose">R2 is our first publicly playable release. It works from the audio alone, and between your song and your chart, three things happen.</p>
+      <ol class="steps">
+        <li><b>It finds the beat.</b><span>R2 listens for the beats, then lines each tempo section up with where the song's sounds begin.</span></li>
+        <li><b>It chooses where notes fall.</b><span>Beat by beat, it decides where notes start, from what it hears.</span></li>
+        <li><b>It arranges the chart.</b><span>It takes a character, such as how many long notes and chords, from human charts whose notes fall in a similar way, then lays out lanes, taps and long notes. This step does not hear the audio yet.</span></li>
+      </ol>
+      <p class="prose" style="margin-top: var(--s4)">What comes out is a complete osu!mania 4K chart, made in your browser, that you can watch against the music and open in osu!.</p>
       <div class="actions">
         <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2">Model on Hugging Face</a>
         <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/r2-1.0/docs/research/r2_system.md">Read the report</a>
         <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/tree/r2-1.0">Code</a>
       </div>
-      <figure class="hero-fig">
-        <div class="stage"><img src="/img/saigetsu.png" width="1600" height="900" alt="Seven vertical panels of a four-lane chart, read bottom to top and then left to right. Yellow bars are taps and cyan bars are long notes; taps run through every panel and long notes appear in the later ones."></div>
-        <figcaption>SaiGetsu (Cut Ver.), Otokaze, requested at 3.5 stars: a chart generated by R2. In these renders yellow notes are taps and cyan notes are long notes. Each panel reads bottom to top, then continues in the panel to its right.</figcaption>
-      </figure>
     </section>
 
     <section id="aim">
-      <h2>What ensomi is aiming for</h2>
-      <p class="prose">ensomi wants listening to music, playing it and creating for it to become one activity. Three scenarios carry that aim.</p>
+      <h2>What we are building</h2>
+      <p class="prose statement">We want listening to music, playing it and making charts for it to become one activity. Four moments show what we mean.</p>
       <div class="cols">
         <div>
-          <h3>Ambient play</h3>
-          <p>Music is already playing around you. ensomi recognises it, finds the current position and plays a chart, generated in real time, that follows the music without interrupting it.</p>
+          <p class="eyebrow">Ambient play</p>
+          <h3>The music around you becomes something you play.</h3>
+          <p>A song is already playing nearby. ensomi recognises it, finds where it is, and starts a chart, generated in real time, that follows the music without interrupting it.</p>
         </div>
         <div>
-          <h3>Mapping</h3>
-          <p>A mapper selects one section and asks for candidate choreography while the rest of the chart stays in place. Candidates are compared, kept, retried or undone. Choice and expression stay with the mapper.</p>
+          <p class="eyebrow">Mapping</p>
+          <h3>You shape the choreography; ensomi offers candidates.</h3>
+          <p>A mapper selects one passage and asks for candidate choreography while the rest of the chart stays in place. They compare, keep, retry or undo. The choices, and the expression, stay with the mapper.</p>
         </div>
         <div>
-          <h3>Training</h3>
-          <p>A player picks music they like and a movement to practise, and the chart is shaped around it.</p>
+          <p class="eyebrow">Training</p>
+          <h3>Practise on music you love.</h3>
+          <p>A player picks songs they love and a movement they want to get better at, and the chart is shaped around that movement.</p>
+        </div>
+        <div>
+          <p class="eyebrow">Playing together</p>
+          <h3>Your best play lands in your opponent's chart.</h3>
+          <p>Like clearing lines in versus Tetris, a clean passage or a long combo sends an attack: a burst of notes or a harder pattern, dropped into what your opponent is about to play. In co-op you coordinate instead, and what one of you plays shapes the other's chart.</p>
         </div>
       </div>
-      <p class="prose" style="margin-top: var(--s4)">That needs charts that are playable at the requested difficulty, follow the music's rhythm, keep one character through the whole song, and respond to requests. R2 is the first step: a whole song, generated while you wait. It does not yet play along in real time or regenerate one section of an existing chart.</p>
+      <p class="prose" style="margin-top: var(--s4)">We are not there yet. Each moment needs charts that are playable at the difficulty you ask for, follow the music, keep one character through a whole song and answer what you ask. R2 is our first step: a whole song, charted while you wait, and you can already ask for a style in one part of it. It does not yet play along in real time, change a chart while someone plays it, or rework one passage of an existing chart.</p>
     </section>
 
-    <section id="today">
-      <h2>What R2 does today</h2>
-      <p class="prose">R2 is the first ensomi release that works from audio alone. From the command line, a 2 to 3.3 minute song takes 8 to 12 seconds on the machine it was checked on (an Apple M5, CPU, one thread).</p>
-      <ol class="steps">
-        <li><b>Timing system</b><span>Finds the beats with BeatThis, then refits each tempo segment to the song's own note onsets. No trained weights of its own.</span></li>
-        <li><b>Rows model</b><span>2.1M parameters. Beat by beat, it chooses where notes start from what it hears.</span></li>
-        <li><b>Corpus prior</b><span>Picks the chart's character, such as long-note level and chord density, from the 64 human charts whose head rows look most alike.</span></li>
-        <li><b>R2</b><span>2.4M parameters. Arranges lanes, taps and long notes on every head row, then writes the <code>.osz</code>. It does not hear the audio.</span></li>
+    <section id="r3">
+      <h2>Next: R3</h2>
+      <p class="prose">R2 is our first publicly playable release, and it is a start.</p>
+      <p class="prose">We are now building R3, the next system. Like R2, it spans timing, head rows (where notes fall) and choreography (how they are arranged). It goes after what R2 taught us, in this order.</p>
+      <ol class="aims">
+        <li>
+          <h3>Notes on the music</h3>
+          <p>Notes should land on what you hear. We are working on head rows that sit more precisely on what the audio actually contains.</p>
+        </li>
+        <li>
+          <h3>An arrangement that listens</h3>
+          <p>R2's arrangement does not hear the audio. It lays out notes from where they fall, not from the sound, and it shows in long notes that do not follow the music. For R3 we are bringing music information into the arrangement model, so that the choreography listens too.</p>
+        </li>
+        <li>
+          <h3>Less hidden steering</h3>
+          <p>A few calibration rules hold R2 steady as it writes, such as a restoring force that pulls the chart back toward the character it was given. We are reviewing them, to find where they bend particular charts out of shape.</p>
+        </li>
+        <li>
+          <h3>Difficulty you can trust</h3>
+          <p>When you ask for a star rating, the chart should match it. Today a chart can come out easier or harder than you asked. We are working on better difficulty control, and getting it right may reshape much of the system.</p>
+        </li>
       </ol>
-    </section>
-
-    <section id="previews">
-      <h2>Preview charts</h2>
-      <p class="prose">Four songs, generated at seed 0 with default settings by the command-line system. They illustrate behaviour; they are not a quality benchmark. No audio is included. Each image is the middle page of the chart's render by <a href="https://github.com/ensomi-labs/beatmap-lens">Beatmap Lens</a>.</p>
-      <div class="gallery">
-        <figure>
-          <div class="stage"><img src="/img/hesitation-snow.png" width="1600" height="900" loading="lazy" alt="Generated chart for Hesitation Snow: seven panels of four lanes, almost entirely yellow taps, with no long notes in view."></div>
-          <figcaption><strong>Hesitation Snow (Cut Ver.)</strong>, fripSide. 2.5 stars, 2.8 min, 135 BPM, 1,214 objects.</figcaption>
-        </figure>
-        <figure>
-          <div class="stage"><img src="/img/saigetsu.png" width="1600" height="900" loading="lazy" alt="Generated chart for SaiGetsu: yellow taps throughout, with cyan long notes in the later panels."></div>
-          <figcaption><strong>SaiGetsu (Cut Ver.)</strong>, Otokaze. 3.5 stars, 2.2 min, 102 BPM, 1,215 objects.</figcaption>
-        </figure>
-        <figure>
-          <div class="stage"><img src="/img/catch-the-moment.png" width="1600" height="900" loading="lazy" alt="Generated chart for Catch the Moment: four-lane panels of yellow taps and a few cyan long notes."></div>
-          <figcaption><strong>Catch the Moment</strong>, LiSA. 3.5 stars, 2.0 min, 190 BPM, 1,192 objects.</figcaption>
-        </figure>
-        <figure>
-          <div class="stage"><img src="/img/adventure.png" width="1600" height="900" loading="lazy" alt="Generated chart for Adventure: the densest of the four, with many yellow taps and cyan long notes across seven panels."></div>
-          <figcaption><strong>Adventure</strong>, YOASOBI. 4.5 stars, 3.3 min, 128 BPM, 2,557 objects.</figcaption>
-        </figure>
-      </div>
-      <p class="muted small" style="margin-top: var(--s3)">Song titles and artists are those of the songs. The generated <code>.osu</code> files are in the <a href="https://huggingface.co/sed-i/ensomi-r2/blob/main/PREVIEWS.md">gallery on Hugging Face</a>.</p>
-    </section>
-
-    <section id="status">
-      <h2>What works and what does not yet</h2>
-      <p class="prose">Every chart passes legality and replay checks and has whole-millisecond times. Quality was judged by one experienced player in blind pairs, one generation seed per side, so a single pair is weak evidence.</p>
-      <table class="status-table">
-        <thead><tr><th scope="col">Request</th><th scope="col">Status</th><th scope="col">Evidence</th></tr></thead>
-        <tbody>
-          <tr><th scope="row">Star rating for the whole song</th><td><span class="tag ok">Works</span></td><td>Both blind pairs called the difficulty the right way.</td></tr>
-          <tr><th scope="row">Jumpstream and chordstream sections</th><td><span class="tag ok">Works</span></td><td>Work in blind pairs.</td></tr>
-          <tr><th scope="row">Stream and jack sections</th><td><span class="tag part">Measured only</span></td><td>They reach their target in measurement; not screened on their own.</td></tr>
-          <tr><th scope="row">Section difficulty in stars</th><td><span class="tag part">Not screened</span></td><td>Sections asked to be easier land short of their target.</td></tr>
-          <tr><th scope="row">Chordjack sections</th><td><span class="tag no">Not offered</span></td><td>Out of band in 18 of 28 runs on generated rows.</td></tr>
-          <tr><th scope="row">Long-note amount (<code>--ln tap|half|natural</code>)</th><td><span class="tag no">Does not work yet</span></td><td>"Half" removes about a third, and a blind pair could not tell.</td></tr>
-        </tbody>
-      </table>
-      <p class="muted small" style="margin-top: var(--s3)">The generator above offers the requests marked as working, and stream, jack and section stars as experimental. It does not offer chordjack or the long-note amount.</p>
-
-      <p class="callout"><strong>The human chart still wins.</strong> In all three reference pairs, the human chart of the same song was chosen over R2's. On this evidence R2 has not reached human charts.</p>
-
-      <div class="checked">
-        <div class="card">
-          <h3>Checked</h3>
-          <ul>
-            <li>The new rows model beat the earlier head generator 10 to 3, one undecided.</li>
-            <li>On a holdout of 519 human charts, 85% have 90% of their heads within 20 ms of the timing system's grid.</li>
-            <li>The four example charts regenerate note for note from the published files, with BeatThis freshly downloaded.</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h3>Known limits</h3>
-          <ul>
-            <li>Long notes are the weakest part.</li>
-            <li>Easier sections land short of their target.</li>
-            <li>Long-song stability rests on a decode-time rest rule, not on training.</li>
-            <li>Every verdict is one listener's.</li>
-          </ul>
-        </div>
-      </div>
-      <p class="muted small" style="margin-top: var(--s3)">The evidence for each claim is in the <a href="https://github.com/ensomi-labs/ensomi-model/blob/r2-1.0/docs/research/r2_system.md">report</a>.</p>
+      <p class="prose muted" style="margin-top: var(--s4)">These are aims, and the work is in progress. As with R2, we will say what R3 does only once we have checked it.</p>
     </section>
 
     <section id="run">
       <h2>Run it yourself</h2>
-      <p class="prose">The generator on this page runs R2 in your browser with <code>@ensomi/runtime</code>: the networks as ONNX graphs in ONNX Runtime Web, everything else in ensomi's Rust runtime compiled to WebAssembly. Given the same decoded audio and the same random draws, that runtime reproduces the four example charts note for note (checked in Node and in the browser). In the browser the song is decoded by the browser and seeds drive the runtime's own random generator, so a seed here does not give the same chart as the same seed on the command line.</p>
-      <p class="prose">The command-line system was checked on macOS arm64 (Apple M5, Python 3.10, torch 2.11, CPU); Linux and CUDA were not run.</p>
+      <p class="prose">The generator above runs R2 in your browser with <code>@ensomi/runtime</code>: the networks in ONNX Runtime Web, everything else in ensomi's Rust runtime compiled to WebAssembly. The browser decodes the song and draws its own random numbers, so a seed here does not give the same chart as the same seed on the command line.</p>
+      <p class="prose">To run the release from the command line (we checked it on macOS with Apple silicon; Linux and CUDA were not run):</p>
 <pre><code>git clone https://github.com/ensomi-labs/ensomi-model.git
 cd ensomi-model
 git checkout --detach r2-1.0
@@ -269,15 +241,15 @@ uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
     <section id="licences">
       <h2>Licences</h2>
       <div class="prose">
-        <p>The model files and everything else in the Hugging Face repository are <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>: use, share and adapt with credit, not for commercial purposes, and adaptations carry the same licence. The one exception is the ONNX export of BeatThis (<code>onnx/beatthis.onnx</code>), which keeps BeatThis's MIT licence. The model code is AGPL-3.0-only, the browser runtime is Apache-2.0, and this site is MIT.</p>
-        <p>R2 and the rows model were trained on osu!'s ranked and loved 4K charts from 2 to 6 stars. Neither those charts nor their audio are distributed.</p>
+        <p>The model files and the rest of the Hugging Face repository are <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>: use, share and adapt them with credit, not commercially, and share adaptations under the same licence. The ONNX export of BeatThis (<code>onnx/beatthis.onnx</code>) keeps BeatThis's MIT licence. The model code is AGPL-3.0-only, the browser runtime is Apache-2.0, and this site is MIT.</p>
+        <p>R2 and the rows model were trained on osu!'s ranked and loved 4K charts from 2 to 6 stars. We do not distribute those charts or their audio.</p>
       </div>
     </section>
   </main>
 
   <footer>
     <p>ensomi R2, release <code>r2-1.0</code>. <a href="https://huggingface.co/sed-i/ensomi-r2">Model</a> · <a href="https://github.com/ensomi-labs/ensomi-model">Code</a> · <a href="https://github.com/ensomi-labs">ensomi-labs</a></p>
-    <p>Site content follows the R2 report and makes no claim beyond it.</p>
+    <p>What this page says about R2 follows the R2 report and claims nothing beyond it. R3 is work in progress.</p>
   </footer>
 </div>
 </body>

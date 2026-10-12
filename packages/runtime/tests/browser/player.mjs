@@ -2,6 +2,15 @@
 export async function playerChecks(page,out){
  const result={};
  await page.locator('#result').scrollIntoViewIfNeeded();await page.bringToFront();
+ // Volume, before the first play: the audio element starts at the slider's initial value, follows the slider down by key and pointer, and stays at most 1 when pushed past the top.
+ const volume=()=>page.evaluate(()=>{const v=document.querySelector('#volume'),a=document.querySelector('#audio');return{value:Number(v.value),initial:Number(v.defaultValue),max:Number(v.max),audio:a.volume,shown:document.querySelector('#volume-value').textContent,valueText:v.getAttribute('aria-valuetext'),played:a.played.length};});
+ const slider=page.locator('#volume'),initial=await volume();
+ await slider.focus();await page.keyboard.press('ArrowLeft');const key=await volume();
+ const box=await slider.boundingBox();await page.mouse.click(box.x+box.width*initial.initial/initial.max/2,box.y+box.height/2);const pointer=await volume();
+ await slider.focus();await page.keyboard.press('End');for(let i=0;i<3;i++)await page.keyboard.press('ArrowRight');const top=await volume();
+ await slider.fill(String(initial.initial));
+ const steps={initial,key,pointer,top};
+ result.volume={...steps,pass:initial.played===0&&initial.value===initial.initial&&key.value<initial.value&&pointer.value<initial.value&&top.value===top.max&&Object.values(steps).every(s=>s.audio===s.value/100&&s.audio<=1&&parseInt(s.shown)===s.value&&s.valueText===s.shown)};
  await page.evaluate(()=>{
   const audio=document.querySelector('#audio'),canvas=document.querySelector('#lanes');window.__player={samples:[],capture:false,last:0,firstDraw:null};
   const rr=CanvasRenderingContext2D.prototype.roundRect;

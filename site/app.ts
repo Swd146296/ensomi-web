@@ -365,6 +365,16 @@ function presets(id: string, values: number[], initial: number, label: (v: numbe
 }
 presets('rates', RATES, 1, v => `${v}×`, v => { player.audio.defaultPlaybackRate = v; player.audio.playbackRate = v; });
 presets('speeds', VISUAL_SPEEDS, player.speed, String, v => { player.speed = v; });
+// Volume only scales the file down: the slider runs 0 to 100% and an audio element's volume tops out at 1.
+const volume = field('volume');
+function setVolume() {
+    const percent = Number(volume.value), text = `${percent}%`;
+    player.audio.volume = percent / 100;
+    $('volume-value').textContent = text;
+    volume.setAttribute('aria-valuetext', text);
+}
+volume.addEventListener('input', setVolume);
+setVolume();
 
 // Space plays or pauses; Left and Right seek 5 s. Typing targets and focused buttons keep their own keys.
 document.addEventListener('keydown', event => {

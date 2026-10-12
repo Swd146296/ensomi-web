@@ -81,6 +81,6 @@ try{
   if(!random.seed||!random.seedShown?.startsWith(String(random.seed))||random.seedField!=='0'||!report.randomSeed.reproduced)process.exitCode=1;
  }
  if(source!=='folder'){await load(true);for(const song of songs.slice(0,2))await generate(song,true);}
- if(process.env.ENSOMI_PLAYER==='1') { report.player=await playerChecks(page,out); await writeFile(join(out,'player.json'),JSON.stringify(report.player,null,2)); }
+ if(process.env.ENSOMI_PLAYER==='1') { report.player=await playerChecks(page,out); await writeFile(join(out,'player.json'),JSON.stringify(report.player,null,2)); if(!report.player.volume.pass)process.exitCode=1; }
  report.finished=new Date().toISOString();
 }catch(e){process.exitCode=1;report.failure=String(e);console.error(e);}finally{clearInterval(memoryTimer);await save();await browser.close();}

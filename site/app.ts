@@ -341,6 +341,7 @@ function showResult(result: GenerationResult) {
         tr.append(th, td);
         return tr;
     }));
+    $('times-total').textContent = `Generated in ${detail.seconds.total.toFixed(1)} s`;
 
     player.audio.src = audio;
     player.load({ chart: result.chart, segments: detail.rows.segments, sections: done.sections });

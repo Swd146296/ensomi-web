@@ -36,7 +36,7 @@ async function generate([slug, id, ext, star], round, exact, repeat) {
     await page.locator('#generate-button').click();
     await page.waitForFunction(i => __test.results.length > i || __test.events.some(e => e.type === 'error'), index, { timeout: 600000 });
     const wallSeconds = (performance.now() - started) / 1000;
-    const r = await page.evaluate(i => ({ receipt: __test.results[i]?.receipt?.receipt_json, songStatus: document.querySelector('#song-status').textContent, table: [...document.querySelectorAll('#times tr')].map(x => x.innerText), error: document.querySelector('#error').hidden ? null : document.querySelector('#error').textContent }), index);
+    const r = await page.evaluate(i => ({ receipt: __test.results[i]?.receipt?.receipt_json, songStatus: document.querySelector('#song-status').textContent, table: [...document.querySelectorAll('#times tr')].map(x => [...x.cells].map(c => c.textContent).join('\t')), error: document.querySelector('#error').hidden ? null : document.querySelector('#error').textContent }), index);
     const seconds = r.receipt ? JSON.parse(r.receipt).seconds : null, decode = r.table.find(row => row.startsWith('Exact-timing decode'));
     const row = { song: slug, round, exact, repeat, wallSeconds, songStatus: r.songStatus, error: r.error, exactDecode: decode, seconds, table: r.table };
     report.runs.push(row);

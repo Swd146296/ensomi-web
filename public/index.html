@@ -135,7 +135,10 @@
             <a class="btn" id="get-osu" download>Download .osu</a>
           </div>
           <dl class="receipt" id="receipt"></dl>
-          <table class="times" id="times" aria-label="Time per phase"></table>
+          <details class="timing">
+            <summary id="times-total">Generation time</summary>
+            <table class="times" id="times" aria-label="Time per phase"></table>
+          </details>
         </div>
       </div>
       <audio id="audio" preload="auto"></audio>

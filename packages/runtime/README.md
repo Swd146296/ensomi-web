@@ -1,8 +1,8 @@
 # Runtime checks
 
-The page generates with [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) 0.1.1 from npm, the
+The page generates with [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) 0.2.0 from npm, the
 WebAssembly build of Ensomi's shared Rust runtime ([ensomi-labs/runtime](https://github.com/ensomi-labs/runtime),
-tag `v0.1.1`) and its JavaScript API over ONNX Runtime Web. The repository root's `package.json` pins it exactly; the
+tag `v0.2.0`) and its JavaScript API over ONNX Runtime Web. The repository root's `package.json` pins it exactly; the
 package's README documents the API. This directory holds the checks of that runtime in this site, the browser tests
 and their results. Apache-2.0.
 
@@ -24,6 +24,8 @@ the runtime's name (see Checks).
   soxr table for that rate, fetched from `public/resampler/`, and to the rows model's 24000 Hz by linear
   interpolation, as the Python release does. The report gives the drift and the cost both ways
   (`artifacts/browser-test/report.md`).
+- The page generates the whole chart with `generateChart` and plays it afterwards; it does not use the package's
+  streaming API (`prepare`, `Prepared`, `ChartScheduler`).
 - Seeds drive the runtime's `mulberry32-u53-v1` generator, not Python's RNG, so a seed does not give the command
   line's chart. The page draws a random seed for seed 0 and shows the seed used.
 
@@ -55,7 +57,11 @@ shortening (`site/player.ts`).
 
 Replay parity with the Python release is checked in ensomi-runtime (`conformance/generate/wasm-parity.json`) and in
 the browser by `tests/browser/diagnostics.mts wasm control` (recorded Python PCM) and `wasm native` (the page's
-exact-timing decoding of the original audio files): all 6,178 hit objects and every recorded draw on the four songs.
+exact-timing decoding of the original audio files). On Hesitation Snow and Adventure every recorded draw is consumed
+and all 3,771 hit objects equal the release charts'. The release arranged SaiGetsu and Catch the Moment a second time,
+which the runtime does not: there the replay consumes the draws through the first arrangement (1,805 of 3,380 and
+1,767 of 3,331) and the chart differs from the release's. ensomi-runtime checks those two against the release's first
+arrangement.
 
 The browser tests and their results are in `tests/browser/README.md` and `artifacts/browser-test/report.md`.
 

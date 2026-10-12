@@ -1,5 +1,35 @@
 # Ensomi R2 browser tests
 
+## Runtime 0.2.0, 2026-10-12, bings-mac
+
+**The page generates with `@ensomi/runtime` 0.2.0, which arranges a song once. Its page code is unchanged: the receipt fields it reads are all still there. A whole-song generation through the page with Exact timing on gives the native runtime 0.2.0's chart for the same PCM, seed and request on all four release songs: the `.osu` is byte-identical on WebAssembly, and on WebGPU too except for one Catch the Moment beat length 1.1e-13 ms apart. The headless suite passes.**
+
+**Package.** `npm install @ensomi/runtime@0.2.0 --save-exact` (job `20261012-140607-web020-install`): the lockfile's integrity is `sha512-yYZj6oTR…`, and the package's `src/` and `resampler/` equal `js/` of ensomi-runtime at tag `v0.2.0`. `index.d.ts` only gained the streaming API (`prepare`, `Prepared`, `ChartScheduler`), which the page does not use. In receipts `controls.difficulty.passes` has one entry, and `would_repass` and `commit` are gone; the page reads neither. `checks/same-as-ts.mjs` is removed: it compared with main `9d8e725`'s TypeScript runtime, which arranged a song a second time when the first arrangement missed the star's target, so their charts now differ by design.
+
+**Same chart as native.** Job `20261012-140834-web020-equal`, comparison rerun in `20261012-141157-web020-compare2`. The page was built from this tree and served with the local model, in headless Chrome on WebAssembly and on WebGPU, with Exact timing on and seed 1, at the page matrix's stars. For each song the test kept the mono PCM at the file's rate that `site/app.ts` posts to the worker (copied before the transfer), the request, and the page's `.osu` download. `generate` (`crates/generate-ort/src/bin/generate.rs`, ensomi-runtime `v0.2.0`, ONNX Runtime CPU) then ran on the same PCM with the same rate, star, seed, title and audio file name. Without controls the page sends `controls: {sections: []}` and `generate` sends `long_notes: 0`, which the core reads alike. Exact timing is the page path whose input the native API takes: mono PCM at the file's rate. The default path passes WebAudio's 24000 and 22050 Hz streams, which `generate` cannot take.
+
+| Song | Rate, Hz | Objects | WebAssembly | WebGPU |
+| --- | --- | --- | --- | --- |
+| Hesitation Snow | 48000 | 1,187 | `.osu` identical | `.osu` identical |
+| SaiGetsu | 44100 | 1,168 | `.osu` identical | `.osu` identical |
+| Catch the Moment | 44100 | 1,002 | `.osu` identical | hit objects identical; one of 3 timing points 1.1e-13 ms off |
+| Adventure | 96000 | 2,284 | `.osu` identical | `.osu` identical |
+
+Both builds write the same generator line, `// ensomi-runtime 0.2.0 seed=1 random=mulberry32-u53-v1`, and the page's chart objects equal those of the native `.osu`. The WebGPU difference is in the last printed digit of a beat length (631.3408359630795 against …794), from BeatThis on the GPU; ensomi-runtime's replay criteria allow timing points within 1e-6 ms. Against `@ensomi/runtime` 0.1.1 (`page-webgpu-local-exact.json`, same songs, stars and seed, Exact timing on), the chart hashes of Hesitation Snow, SaiGetsu and Catch the Moment are unchanged. 0.1.1 arranged those once. Adventure, which 0.1.1 arranged twice, went from 2,380 to 2,284 objects (job `20261012-143339-web020-hashes`).
+
+**Checks.** Job `20261012-141212-web020-suite`, headless, every step exited 0: `npm ls` (0.2.0), `typecheck`, `typecheck:site`, `build:site` (`public/ensomi-runtime.wasm` is the package's core, SHA-256 `2d29a1f6…`).
+- **Page matrix.** `page-matrix.mjs webgpu local` and, with `ENSOMI_PLAYER=1`, `wasm local` ran 9 generations each, `webgpu folder` 4, and `webgpu hf` 6, which loaded in 35 s on the first try. Every chart is valid with exact `.osz` contents and has one arrangement pass in its receipt. On each song the seed-1 chart is the same across both providers and all three sources. The seed-0 pair gives the same chart again, and the five-second section is rejected.
+- **Player.** 60 fps at all three rates with zero drift; seeks are within 0.001 ms, and the volume checks pass.
+- **Diagnostics.** `diagnostics.mts`:
+  - `networks`: within 9.3e-5 of the recordings on WebGPU and WebAssembly.
+  - `webgpu compare`: largest output difference 1.9e-4 (BeatThis).
+  - `wasm replay`: Hesitation Snow, Catch the Moment and Adventure stop at a rows draw (4, 1 and 15). SaiGetsu consumes the first arrangement's 1,805 draws without a difference, and its objects differ from the release's from the first one on.
+  - `wasm control` and `wasm native`: Hesitation Snow and Adventure consume every draw and give all 3,771 release hit objects. SaiGetsu and Catch the Moment, which the release arranged twice, consume 1,805 of 3,380 and 1,767 of 3,331 draws and give 1,131 and 1,126 objects. These are the counts in ensomi-runtime's `conformance/generate/wasm-parity.json` for the release's first arrangement.
+- **Downloads and grid.** `validate-downloads.py`: 67 archives, the 28 of this page matrix among them, no failures. `grid-drift.mjs npm` gives segments equal to `grid-drift-preview.json` and `grid-drift-exact-off.json` on every song, since the timing stages did not change.
+- **`checks/ln-gaps.mjs`.** `artifacts/ln-gaps.json` was regenerated. No tail of the 3,479 generated long notes followed by a head in their lane ends at or after that head. Gaps under the head height: 205 at 120 px/s, 22 at 240 and 4 at 480, none at 720 (the default) or 960. The tail cap reaches into the next head 129 times at 120 px/s and 5 at 240 with the tail at its end time, and 69 and 4 when drawn short, none at 480 or faster. The shortest gaps are 26, 27, 27, 29 and 39 ms. With 0.1.0 ("Long-note tails" below) there were 3,139 such long notes, none under the head height at 480 px/s or faster, and a shortest gap of 39 ms; the charts differ where 0.1.0 arranged a song twice.
+
+Other agents' builds ran on the mac during these jobs, so no timings are reported.
+
 ## Exact timing option, 2026-10-12, bings-mac
 
 **The page has an Exact timing option, off by default, below the star rating and seed. Off, the page decodes and generates as before: the seed-1 charts are those of the deployed page, and the beat grid is up to 1.32 ms from the Python release (Catch the Moment). On, the page decodes the song again at the file's own sample rate and the core converts the rate as the Python release does: the beat grid is within 0.0032 ms of the release on the four songs, and Python's recorded draws reproduce all four release charts. With `@ensomi/runtime` 0.1.1 the option costs about 0.35 s on Catch the Moment (44.1 kHz, 2:01) and 1.3 s on Adventure (96 kHz, 3:19), warm on WebGPU. The suite passes headless.**

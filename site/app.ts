@@ -14,7 +14,7 @@ const RECEIPT_TIMES: [string, string][] = [['pcm', 'Prepare PCM'], ['spectrogram
 
 interface Song { file: File; buffer: ArrayBuffer; mel: Float32Array; beatthis: Float32Array; durationMs: number; decodeSeconds: number }
 interface SectionDraft { start: string; end: string; kind: string; strength: number; star: number }
-interface Job { song: Song; title: string; artist: string; seed: number | bigint; star: number; sections: SectionRequest[] }
+interface Job { song: Song; title: string; artist: string; seed: number | bigint; random: boolean; star: number; sections: SectionRequest[] }
 
 let worker: Worker | undefined, caps: ModelCapabilities | undefined, provider = '', threads = 1, loadSeconds = 0, loading = false;
 let song: Song | undefined, job: Job | undefined, generating = false, timer = 0;
@@ -149,9 +149,17 @@ field('title').addEventListener('input', () => { field('title').dataset.auto = '
 field('star').addEventListener('input', () => { $('star-value').textContent = Number(field('star').value).toFixed(1); });
 field('seed').addEventListener('input', update);
 $('new-seed').addEventListener('click', () => {
-    field('seed').value = String(crypto.getRandomValues(new Uint32Array(1))[0]);
+    field('seed').value = String(randomSeed());
     update();
 });
+
+/** A random seed for a seed of 0. Never 0 itself, so that the seed shown with the result reproduces the chart. The core
+ * seeds its generators from the low 32 bits. */
+function randomSeed() {
+    let seed = 0;
+    while (!seed) seed = crypto.getRandomValues(new Uint32Array(1))[0];
+    return seed;
+}
 
 function seedValue(): number | bigint | undefined {
     const text = field('seed').value.trim();
@@ -243,11 +251,12 @@ function update() {
 // Generate
 $('generate-button').addEventListener('click', () => {
     if (!song || !caps) return;
-    const requests = sectionRequests(), seed = seedValue();
-    if (typeof requests === 'string' || seed === undefined) return;
+    const requests = sectionRequests(), entered = seedValue();
+    if (typeof requests === 'string' || entered === undefined) return;
     clearError();
-    const title = field('title').value.trim() || song.file.name.replace(/\.[^.]+$/, ''), artist = field('artist').value.trim();
-    job = { song, title, artist, seed, star: Number(field('star').value), sections: requests };
+    // A seed of 0 draws a new seed for each generation; the result shows the seed used.
+    const title = field('title').value.trim() || song.file.name.replace(/\.[^.]+$/, ''), artist = field('artist').value.trim(), seed = entered === 0 ? randomSeed() : entered;
+    job = { song, title, artist, seed, random: entered === 0, star: Number(field('star').value), sections: requests };
     generating = true;
     phase = { current: 0, started: performance.now(), seconds: [] };
     renderPhases();
@@ -302,7 +311,7 @@ function showResult(result: GenerationResult) {
         ['Provider', providerName(provider)],
         ['Song', `${done.song.file.name} · ${clock(done.song.durationMs)}`],
         ['Star', done.star.toFixed(1)],
-        ['Seed', String(done.seed)],
+        ['Seed', done.random ? `${done.seed} (drawn at random)` : String(done.seed)],
         ['Notes', `${objects.length.toLocaleString('en')}: ${(objects.length - holds).toLocaleString('en')} taps, ${holds.toLocaleString('en')} long notes`],
         ['Head rows', Number(detail.rows.K).toLocaleString('en')],
         ['Tempo', detail.rows.segments.map((s: number[]) => (60000 / s[1]).toFixed(1)).join(', ') + ' BPM'],

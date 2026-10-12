@@ -5,7 +5,8 @@
 // into the next head with the tail at its end time and at the shortened tail time, and the gaps in beats.
 //
 // Run from packages/runtime: node --import tsx checks/ln-gaps.mjs   writes artifacts/ln-gaps.json
-// Reads what checks/same-as-ts.mjs reads (ENSOMI_MODEL_DIR and ENSOMI_REFERENCE_DIR override).
+// Reads the release model and the runtime-ref recordings of the sibling ensomi-model (ENSOMI_MODEL_DIR and
+// ENSOMI_REFERENCE_DIR override) and the recording reader of the sibling ensomi-runtime.
 import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import * as ort from 'onnxruntime-web/wasm';

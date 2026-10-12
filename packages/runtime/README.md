@@ -7,8 +7,8 @@ package's README documents the API. This directory holds the checks of that runt
 and their results. Apache-2.0.
 
 The package replaced a vendored copy of the same build, which had replaced the TypeScript runtime of main `9d8e725`.
-Given the same inputs the Wasm and TypeScript runtimes produce the same charts, `.osu` text and receipts, apart from
-the runtime's name (see Checks).
+From 0.2.0 the runtime arranges a song once. The TypeScript runtime, like the Python release, arranged it a second
+time when the first arrangement missed the star's difficulty target, so their charts differ wherever it did.
 
 ## How the page uses it
 
@@ -38,17 +38,8 @@ Run from this directory, with the sibling `ensomi-model` (release model, runtime
 npm run typecheck              # the package's index.d.ts against onnxruntime-web's types
 npm run typecheck:site
 npm run build:site
-tests/browser/build-main.sh    # main 9d8e725's TypeScript runtime and page, into artifacts/bulk/main
-npm run same-as-ts             # writes artifacts/same-as-ts.json
 node --import tsx checks/ln-gaps.mjs   # writes artifacts/ln-gaps.json
 ```
-
-`same-as-ts` runs the npm package and the TypeScript runtime of main `9d8e725` in Node on onnxruntime-web's WASM
-backend with one thread, on the recorded PCM of the four release songs with seeds 0, 1 and 2, plus a controls case
-(Hesitation Snow, seed 1, half long notes and three sections). It compares charts, `.osu` text and receipts after
-normalising only the runtime name and the wall-clock fields. The core computes `exp`, `log` and the other
-transcendental functions with Rust's `libm` crate, where the TypeScript runtime used V8's `Math`; their last bits can
-differ, which on other input could show in receipt digits or, at a near-tie, a sampled choice.
 
 `ln-gaps` generates the four release songs from their recorded PCM with seeds 0 to 4, reads the Python release charts,
 and counts long-note tails at or after the next head in their lane, gaps under the inspector's drawn head height per
@@ -67,9 +58,8 @@ The browser tests and their results are in `tests/browser/README.md` and `artifa
 
 ## Files
 
-- `checks/same-as-ts.mjs`: the Node comparison with the TypeScript runtime.
 - `checks/ln-gaps.mjs`: long-note tails against the next head in their lane.
 - `checks/resampler_coefficients.py`: how the soxr tables now shipped in the package's `resampler/` were made; it
   writes them to `assets/` here, for comparison.
 - `tests/browser/`: the page and runtime tests in Chrome.
-- `artifacts/`: `same-as-ts.json`, the browser-test report and the speed report of #4.
+- `artifacts/`: `ln-gaps.json`, the browser-test report and the speed report of #4.

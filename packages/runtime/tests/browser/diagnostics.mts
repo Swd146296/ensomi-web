@@ -4,19 +4,22 @@ import { createServer } from 'node:http';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createReadStream, statSync } from 'node:fs';
 import { resolve,join } from 'node:path';
-import { Recording } from '../../checks/recording.js';
-import { parseOsu } from '../../checks/compare.js';
+import { fileURLToPath } from 'node:url';
+import { Recording, parseOsu } from '../../../../../ensomi-runtime/js/checks/recording.mjs';
+// The npm package's directory: its decodeAudio, Wasm core (pkg/) and resampler tables (served as /assets/).
+const pkg=fileURLToPath(new URL('..',import.meta.resolve('@ensomi/runtime')));
 const runtime=resolve(import.meta.dirname,'../..'),modelRepo=resolve(runtime,'../../../ensomi-model'),out=join(runtime,'artifacts/browser-test'),bulk=join(out,'bulk');
 await mkdir(bulk,{recursive:true});
 const backend=process.argv[2]||'wasm',mode=process.argv[3]||'replay';
 await build({entryPoints:[join(import.meta.dirname,'diagnostics.ts')],bundle:true,format:'esm',target:'es2022',outfile:join(bulk,'diagnostics.js')});
-await build({entryPoints:[join(runtime,'src/decode_audio.ts')],bundle:true,format:'esm',target:'es2022',outfile:join(bulk,'decode.js')});
+await build({entryPoints:[join(pkg,'src/decode_audio.js')],bundle:true,format:'esm',target:'es2022',outfile:join(bulk,'decode.js')});
 const recordings=new Map();async function rec(song:string){if(!recordings.has(song))recordings.set(song,await Recording.open(join(modelRepo,'artifacts/runtime-ref/bulk',song)));return recordings.get(song);}
 const server=createServer(async(req,res)=>{try{const p=new URL(req.url!,'http://localhost').pathname;let file;
  if(p==='/'){res.setHeader('Content-Type','text/html');res.end('<title>Ensomi browser diagnostics</title><h1>Ensomi runtime browser diagnostics</h1>');return;}
  if(p==='/diagnostics.js'||p==='/decode.js')file=join(bulk,p.slice(1));
  else if(p.startsWith('/model/'))file=join(modelRepo,'artifacts/release-r2/bulk/hf/ensomi-r2',p.slice(7));
- else if(p.startsWith('/assets/'))file=join(runtime,p.slice(1));
+ else if(p.startsWith('/assets/'))file=join(pkg,'resampler',p.slice(8));
+ else if(p.startsWith('/pkg/'))file=join(pkg,p.slice(1));
  else if(p.startsWith('/song/')){const summary=JSON.parse(await readFile(join(modelRepo,'artifacts/runtime-ref',p.slice(6),'summary.json'),'utf8'));file=join(modelRepo,summary.audio);}
  else if(p.startsWith('/ref/')){
   const [, ,song,kind,id]=p.split('/'),r=await rec(song);res.setHeader('Content-Type','application/json');
@@ -26,10 +29,10 @@ const server=createServer(async(req,res)=>{try{const p=new URL(req.url!,'http://
   }
   if(kind==='array'){const spec=r.index.arrays[Number(id)];res.setHeader('Content-Type','application/octet-stream');createReadStream(join(modelRepo,'artifacts/runtime-ref/bulk',song,'arrays.bin'),{start:spec.byte_offset,end:spec.byte_offset+spec.nbytes-1}).pipe(res);return;}
   if(kind==='network'){const seen=new Set(),calls=r.index.graphs.filter(c=>{if(seen.has(c.name))return false;seen.add(c.name);return true;});res.end(JSON.stringify(calls.map(c=>({...c,inputs:Object.fromEntries(Object.entries(c.inputs).map(([n,id])=>[n,{id,...r.index.arrays[id]}])),outputs:Object.fromEntries(Object.entries(c.outputs).map(([n,id])=>[n,{id,...r.index.arrays[id]}]))}))));return;}
-  if(kind==='compact'){const ev=async(n:string,k:string)=>Array.from((await r.event(n))[k],Number),summary=JSON.parse(await readFile(join(modelRepo,'artifacts/runtime-ref',song,'summary.json'),'utf8'));const draws=[];for(const d of r.index.draws)draws.push({...d,values:Array.from(await r.get(d.values),Number)});
-   const compact={star:summary.settings.star,draws,gridPositions:await ev('rows/grid','position_ms'),headMs:await ev('system/rows','head_ms'),segments:await ev('listener','segments'),songMs:(await ev('listener','song_ms'))[0],melLength:r.index.arrays[2].shape[0],beatLogits:await ev('listener','beat_logits'),downbeatLogits:await ev('listener','downbeat_logits'),objects:parseOsu(await readFile(join(modelRepo,'artifacts/runtime-ref/bulk',song,'reference/generated.osu'),'utf8'))};res.end(JSON.stringify(compact));return;}
+  if(kind==='compact'){const summary=JSON.parse(await readFile(join(modelRepo,'artifacts/runtime-ref',song,'summary.json'),'utf8'));const draws=[];for(const d of r.index.draws)draws.push({...d,values:Array.from(await r.get(d.values),Number)});
+   const compact={star:summary.settings.star,draws,objects:parseOsu(await readFile(join(modelRepo,'artifacts/runtime-ref/bulk',song,'reference/generated.osu'),'utf8'))};res.end(JSON.stringify(compact));return;}
  }
- if(!file){res.writeHead(404).end();return;}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.json')?'application/json':'application/octet-stream');createReadStream(file).pipe(res);
+ if(!file){res.writeHead(404).end();return;}res.setHeader('Content-Type',file.endsWith('.js')?'text/javascript':file.endsWith('.json')?'application/json':file.endsWith('.wasm')?'application/wasm':'application/octet-stream');createReadStream(file).pipe(res);
 }catch(e){res.writeHead(500).end(String(e));}}).listen(0,'127.0.0.1');
 await new Promise(r=>server.once('listening',r));const origin=`http://127.0.0.1:${(server.address() as any).port}`;
 const browser=await chromium.launch({channel:'chrome',headless:!process.env.ENSOMI_HEADED,args:['--disable-background-timer-throttling','--disable-renderer-backgrounding']});

@@ -2,7 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "ensomi-app",
   "compatibility_date": "2026-10-01",
-  "build": { "command": "cd packages/runtime && npm run build:site" },
+  "build": { "command": "npm run build:site" },
   "assets": { "directory": "./public" },
   "routes": [{ "pattern": "ensomi.app", "custom_domain": true }]
 }

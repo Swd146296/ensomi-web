@@ -77,7 +77,7 @@
         <div class="pair">
           <label><span class="star-label">Star rating <output id="star-value">3.5</output></span>
             <input type="range" id="star" min="2" max="5.9" step="0.1" value="3.5"></label>
-          <label>Seed
+          <label>Seed · 0 draws a new one for each chart
             <span class="seed-row"><input type="text" id="seed" inputmode="numeric" value="0" spellcheck="false"><button type="button" class="btn small" id="new-seed">New seed</button></span></label>
         </div>
         <div class="sections">
@@ -119,6 +119,7 @@
           </fieldset>
           <div class="tuning">
             <div class="preset-row"><span>Audio rate</span><div class="presets" id="rates" role="group" aria-label="Audio rate"></div></div>
+            <div class="preset-row"><label for="volume">Volume</label><span class="volume"><input type="range" id="volume" min="0" max="100" step="5" value="80"><output id="volume-value" for="volume"></output></span></div>
             <div class="preset-row"><span>Visual speed, px/s</span><div class="presets" id="speeds" role="group" aria-label="Visual speed in pixels per second"></div></div>
           </div>
           <p class="small muted">Space plays or pauses; ← and → seek 5 seconds. In the lanes, click to seek, drag to scrub, and use the wheel or ↑ ↓ to move. Rose notes are taps, lavender notes are long notes, purple bands are the sections you asked for.</p>
@@ -244,7 +245,7 @@
 
     <section id="run">
       <h2>Run it yourself</h2>
-      <p class="prose">The generator on this page runs R2 in your browser with <code>@ensomi/runtime</code>: the networks as ONNX graphs in ONNX Runtime Web, everything else in TypeScript. Given the same decoded audio and the same random draws, that runtime reproduces the four example charts note for note (checked in Node and in the browser). In the browser the song is decoded by the browser and seeds drive the runtime's own random generator, so a seed here does not give the same chart as the same seed on the command line.</p>
+      <p class="prose">The generator on this page runs R2 in your browser with <code>@ensomi/runtime</code>: the networks as ONNX graphs in ONNX Runtime Web, everything else in ensomi's Rust runtime compiled to WebAssembly. Given the same decoded audio and the same random draws, that runtime reproduces the four example charts note for note (checked in Node and in the browser). In the browser the song is decoded by the browser and seeds drive the runtime's own random generator, so a seed here does not give the same chart as the same seed on the command line.</p>
       <p class="prose">The command-line system was checked on macOS arm64 (Apple M5, Python 3.10, torch 2.11, CPU); Linux and CUDA were not run.</p>
 <pre><code>git clone https://github.com/ensomi-labs/ensomi-model.git
 cd ensomi-model

@@ -2,7 +2,7 @@ import {playerChecks} from './player.mjs';
 import {chromium} from 'playwright';import {readFile,writeFile} from 'node:fs/promises';import {resolve,join} from 'node:path';
 const out=resolve(import.meta.dirname,'../../artifacts/browser-test'),matrix=JSON.parse(await readFile(join(out,'page-wasm-local.json'),'utf8')),run=matrix.runs.find(r=>r.song==='adventure');
 const fixture={loaded:matrix.loads[0].events.find(e=>e.type==='loaded'),result:{chart:JSON.parse(await readFile(join(out,'bulk/wasm-local-cold-adventure-chart.json'),'utf8')),receipt:{model_name:'Ensomi R2',model_version:'r2-1.0',seed:0,star:4.5,receipt_json:JSON.stringify(run.detail)},osu:await readFile(join(out,'bulk/wasm-local-cold-adventure.osu'),'utf8'),osz:[]}};
-const browser=await chromium.launch({channel:'chrome',headless:false}),page=await browser.newPage({viewport:{width:1440,height:1000}});
+const browser=await chromium.launch({channel:'chrome',headless:!process.env.ENSOMI_HEADED}),page=await browser.newPage({viewport:{width:1440,height:1000}});
 await page.addInitScript(fixture=>{window.__test={results:[fixture.result]};window.Worker=class{onmessage;postMessage(data){setTimeout(()=>this.onmessage({data:data.type==='load'?fixture.loaded:{type:'result',result:{...fixture.result,osz:new Uint8Array()}}}),0);}};},fixture);
 await page.goto('http://127.0.0.1:8087/');await page.locator('#load').click();
 await page.locator('#song').setInputFiles(resolve(import.meta.dirname,'../../../../../ensomi-model/dataset/0/2202551/audio.ogg'));

@@ -42,19 +42,19 @@ async function load(warm){
  if(!data.events.some(e=>e.type==='loaded'))throw new Error(data.error);
 }
 function validate(chart){const errors=[],end=[-1,-1,-1,-1];let prev;for(const o of chart.objects){if(!Number.isInteger(o.lane)||o.lane<0||o.lane>3||!Number.isInteger(o.start_ms)||o.start_ms<0||o.start_ms>chart.duration_ms)errors.push(['head',o]);if(prev&&(o.start_ms<prev.start_ms||o.start_ms===prev.start_ms&&o.lane<=prev.lane))errors.push(['sort',o]);if(o.start_ms<end[o.lane])errors.push(['overlap',o]);if(o.end_ms!==undefined&&(!Number.isInteger(o.end_ms)||o.end_ms<=o.start_ms||o.end_ms>chart.duration_ms))errors.push(['hold',o]);end[o.lane]=o.end_ms??o.start_ms;prev=o;}return errors;}
-async function generate(song,warm,section=false){
+async function generate(song,warm,section=false,seed='1',tag=''){
  const [slug,id,ext,star]=song;const audioPath=join(modelRepo,`dataset/0/${id}/audio.${ext}`);
  const decodeStart=performance.now();await page.locator('#song').setInputFiles(audioPath);
  await page.waitForFunction(()=>!document.querySelector('#song-status').textContent.includes('Decoding'),null,{timeout:30000});
  const decodeWallSeconds=(performance.now()-decodeStart)/1000;
- await page.locator('#star').fill(String(star));await page.locator('#seed').fill('0');await page.locator('#title').fill(slug);
+ await page.locator('#star').fill(String(star));await page.locator('#seed').fill(seed);await page.locator('#title').fill(slug);
  const index=await page.evaluate(()=>__test.results.length),eventStart=await page.evaluate(()=>__test.events.length),started=performance.now();
  await page.locator('#generate-button').click();
  await page.waitForFunction(({index,eventStart})=>__test.results.length>index||__test.events.slice(eventStart).some(e=>e.type==='error'),{index,eventStart},{timeout:600000});
  const wallSeconds=(performance.now()-started)/1000;
- const data=await page.evaluate(index=>{const r=__test.results[index];return {chart:r?.chart,receipt:r?.receipt,events:__test.events,decodes:__test.decodes,status:document.querySelector('#song-status').textContent,error:document.querySelector('#error').hidden?null:document.querySelector('#error').textContent,heapPeak:__test.heapPeak,table:[...document.querySelectorAll('#times tr')].map(x=>x.innerText)};},index);
- const label=`${backend}-${source}${reportSuffix}-${warm?'warm':'cold'}-${slug}${section?'-section':''}`;
- const row={song:slug,warm,section,star,decodeWallSeconds,wallSeconds,...data};
+ const data=await page.evaluate(index=>{const r=__test.results[index];return {chart:r?.chart,receipt:r?.receipt,events:__test.events,decodes:__test.decodes,status:document.querySelector('#song-status').textContent,error:document.querySelector('#error').hidden?null:document.querySelector('#error').textContent,seedShown:[...document.querySelectorAll('#receipt dt')].find(d=>d.textContent==='Seed')?.nextElementSibling.textContent,seedField:document.querySelector('#seed').value,heapPeak:__test.heapPeak,table:[...document.querySelectorAll('#times tr')].map(x=>x.innerText)};},index);
+ const label=`${backend}-${source}${reportSuffix}-${warm?'warm':'cold'}-${slug}${section?'-section':''}${tag}`;
+ const row={song:slug,warm,section,star,seed:data.receipt?.seed,decodeWallSeconds,wallSeconds,...data};
  if(data.chart){
   row.validation=validate(data.chart);row.chartSha256=createHash('sha256').update(JSON.stringify(data.chart)).digest('hex');row.detail=JSON.parse(data.receipt.receipt_json);
   for(const kind of ['osz','osu']){const wait=page.waitForEvent('download');await page.locator(`#get-${kind}`).click();const download=await wait;await download.saveAs(join(bulk,`${label}.${kind}`));}
@@ -75,8 +75,12 @@ try{
   await page.locator('#conditions').screenshot({path:join(out,`screenshots/${backend}-invalid-section.png`)});
   await page.locator('.end').fill('00:40');await page.locator('.kind').selectOption('jumpstream');await page.locator('.value').fill('0.7');
   await generate(songs[3],false,true);await page.locator('.remove').click();
+  // Seed 0 draws a nonzero seed for each generation and shows it with the result; entering that seed gives the same chart.
+  const random=await generate(songs[0],false,false,'0','-seed0'),repeat=await generate(songs[0],false,false,String(random.seed),'-seed0-repeat');
+  report.randomSeed={seed:random.seed,shown:random.seedShown,fieldAfter:random.seedField,reproduced:Boolean(random.chartSha256)&&random.chartSha256===repeat.chartSha256};
+  if(!random.seed||!random.seedShown?.startsWith(String(random.seed))||random.seedField!=='0'||!report.randomSeed.reproduced)process.exitCode=1;
  }
  if(source!=='folder'){await load(true);for(const song of songs.slice(0,2))await generate(song,true);}
- if(process.env.ENSOMI_PLAYER==='1') { report.player=await playerChecks(page,out); await writeFile(join(out,'player.json'),JSON.stringify(report.player,null,2)); }
+ if(process.env.ENSOMI_PLAYER==='1') { report.player=await playerChecks(page,out); await writeFile(join(out,'player.json'),JSON.stringify(report.player,null,2)); if(!report.player.volume.pass)process.exitCode=1; }
  report.finished=new Date().toISOString();
 }catch(e){process.exitCode=1;report.failure=String(e);console.error(e);}finally{clearInterval(memoryTimer);await save();await browser.close();}

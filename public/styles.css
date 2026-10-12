@@ -181,6 +181,9 @@ output { color: var(--text); font-variant-numeric: tabular-nums; }
 .presets button { border: 0; background: transparent; color: var(--muted); font: 600 var(--step--1)/1.2 var(--font-text); font-variant-numeric: tabular-nums; padding: 0.35rem 0.75rem; border-radius: var(--radius-pill); cursor: pointer; }
 .presets button:hover { color: var(--text); }
 .presets button[aria-pressed="true"] { background: var(--lavender); color: var(--action-ink); }
+.volume { display: inline-flex; align-items: center; gap: var(--s2); padding: 3px 0.75rem; background: var(--surface); border-radius: var(--radius-pill); }
+.volume input { width: 8rem; margin: 0; }
+.volume output { min-width: 2.75rem; padding: 0.35rem 0; line-height: 1.2; text-align: right; }
 .downloads { display: flex; flex-wrap: wrap; gap: var(--s2); }
 .receipt { display: grid; grid-template-columns: max-content 1fr; gap: var(--s1) var(--s4); margin: 0; background: var(--surface); border-radius: var(--radius-soft); padding: var(--s3) var(--s4); font-size: var(--step--1); }
 .receipt dt { color: var(--muted); }

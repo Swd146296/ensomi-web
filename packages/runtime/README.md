@@ -1,164 +1,64 @@
-# @ensomi/runtime
+# Runtime checks
 
-Apache-2.0 TypeScript runtime for the released Ensomi R2 graphs. Audio features,
-grid fitting, figure sampling, prior lookup, R2 controls and release sampling,
-chart objects, `.osu`, and `.osz` are implemented in TypeScript. Only the six
-networks run through ONNX Runtime. Core source has no Node imports.
+The page generates with [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) 0.1.0 from npm, the
+WebAssembly build of Ensomi's shared Rust runtime ([ensomi-labs/runtime](https://github.com/ensomi-labs/runtime),
+tag `v0.1.0`) and its JavaScript API over ONNX Runtime Web. The repository root's `package.json` pins it exactly; the
+package's README documents the API. This directory holds the checks of that runtime in this site, the browser tests
+and their results. Apache-2.0.
 
-**Status:** `npm run parity` passes. Replaying Python's random draws, all four
-release songs reproduce every sampled choice and all 6,178 hit objects, and
-every timing-point value is within 1e-6 ms of the Python release (the largest
-difference is 1.2e-8 ms, Catch the Moment). See
-[`artifacts/parity.json`](artifacts/parity.json) and
-[`artifacts/export-divergence.json`](artifacts/export-divergence.json).
+The package replaced a vendored copy of the same build, which had replaced the TypeScript runtime of main `9d8e725`.
+Given the same inputs the Wasm and TypeScript runtimes produce the same charts, `.osu` text and receipts, apart from
+the runtime's name (see Checks).
 
-## Use
+## How the page uses it
 
-```ts
-import { loadModels, decodeAudio, generateChart } from '@ensomi/runtime';
+- `site/worker.ts` calls `loadModels` with the core copied to `public/ensomi-runtime.wasm` by `npm run build:site`,
+  since bundling moves the module away from the package's own files.
+- `site/app.ts` decodes the song with the package's `decodeAudio`: WebAudio decodes it at 24000 and 22050 Hz, and the
+  worker passes both streams to `generateChart`, so the core converts no rate and reads no resampler table. WebAudio's
+  resampler is not the Python release's, which moves the beat grid by up to 1.3 ms against the release charts; the
+  report gives the drift and why the page does not decode at the file's own rate instead
+  (`artifacts/browser-test/report.md`).
+- Seeds drive the runtime's `mulberry32-u53-v1` generator, not Python's RNG, so a seed does not give the command
+  line's chart. The page draws a random seed for seed 0 and shows the seed used.
 
-// The base is the directory containing runtime.json and the six ONNX files.
-const models = await loadModels(
-  'https://huggingface.co/sed-i/ensomi-r2/resolve/main/onnx/',
-  { wasm: { wasmPaths: 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.2/dist/', numThreads: 1 } }
-);
-console.log(models.capabilities);
+## Checks
 
-const bytes = await file.arrayBuffer();
-const { pcm, sampleRate } = await decodeAudio(bytes);
-const result = await generateChart(models, pcm, sampleRate, {
-  audio: { asset_id: file.name },
-  star: 3.5,
-  seed: 0,
-  title: 'Song title',
-  artist: 'Artist',
-}, {
-  onProgress: ({ phase }) => console.log(phase),
-  audio: { name: file.name, bytes: new Uint8Array(bytes) },
-});
-// result.chart, result.receipt, result.osu, result.osz
-await models.dispose();
-```
-
-`loadModels(source, options?)` accepts a base URL or an async function
-`(relativePath) => Uint8Array`. `options.wasm` is applied to ONNX Runtime's
-`env.wasm` before sessions are created (`wasmPaths`, `numThreads`). `localFilesSource(files)` constructs the latter
-from browser-selected `File`s. `models.capabilities` uses EnsomiProtocol 0.2's
-field names and numeric enum values. File checksums are left empty; the loader
-does not make checksum manifests. The runtime targets the released FiLM model
-with memory and optional readers off.
-
-`generateChart` accepts mono `Float32Array`/`Float64Array`, or an `AudioPCM` with
-interleaved samples and a channel count. Optional `mel` and `beatthis` arrays
-are already-decoded mono streams at 24000 and 22050 Hz. The reference has two
-PCM streams because Python uses different decoders and normalization for the
-two frontends. The Node checks pass both recorded PCM streams, then recompute
-all features and model decisions.
-
-`decodeAudio` uses WebAudio `OfflineAudioContext.decodeAudioData` at each of
-those two rates and peak-normalizes the Mel stream. Browser codecs, MP3 leading
-samples, and WebAudio resampling have not been established as identical to
-Python's decoders. For raw PCM without frontend streams, common input rates use
-bundled soxr HQ impulse-response FIR tables for BeatThis; other rates use a
-windowed-sinc converter. Mel uses linear rate conversion and peak normalization.
-The check results cover the recorded PCM path.
-
-`request` follows `GenerateChartRequest`: star in `[2, 6)`, optional unsigned
-64-bit seed, title, artist, and `controls` with `long_notes` and nonoverlapping
-8–32 second sections. Section targets are a star or a pattern kind/strength.
-Use the exported enums. Capabilities retain the Python service's evidence
-statuses, including `NOT_WORKING` for chordjack and long-note amount.
-
-The default random source is `mulberry32-u53-v1`: Mulberry32 words form open
-53-bit uniforms; figure sampling uses a float32 exponential race and R2 uses
-float64 Gumbel maxima. The original seed and the reduced 32-bit rows/R2 seeds
-are recorded in `receipt.receipt_json`. R2 starts at seed + 954 and restarts for
-each difficulty pass. These seeds intentionally do not reproduce Python's RNG.
-A `RandomSource` can be supplied for replay; `checks/replay_random.ts` consumes
-recorded variates and asserts chosen indices without supplying those choices
-to the decoder.
-
-`options.audio` adds the original encoded audio and receipt to an `.osz` with
-fflate. Without it, the result contains the chart, receipt, and `.osu`.
-`options.setting` controls the difficulty name (default `r2`), and `trace`
-provides optional diagnostic events. The `audio` request field is metadata:
-this browser runtime takes PCM directly and does not read local paths.
-
-## Build and check
+Run from this directory, with the sibling `ensomi-model` (release model, runtime-ref recordings, dataset songs) and
+`ensomi-runtime` checkouts beside this repository and `npm ci` done in the repository root.
 
 ```sh
-cd packages/runtime
-npm run build
-npm run typecheck
-npm run parity
-# One song:
-npm run parity -- hesitation-snow
+npm run typecheck              # the package's index.d.ts against onnxruntime-web's types
+npm run typecheck:site
+npm run build:site
+tests/browser/build-main.sh    # main 9d8e725's TypeScript runtime and page, into artifacts/bulk/main
+npm run same-as-ts             # writes artifacts/same-as-ts.json
+node --import tsx checks/ln-gaps.mjs   # writes artifacts/ln-gaps.json
 ```
 
-Checks use onnxruntime-node 1.23.2, CPU, one intra-op and one inter-op thread.
-Default data paths are relative to this package and the sibling ensomi-model
-repository. Override `ENSOMI_MODEL_DIR`, `ENSOMI_REFERENCE_DIR`, and optionally
-`ENSOMI_MODEL_REPO` for another layout. `npm run parity` recomputes everything;
-it does not use intermediate files from earlier checks.
+`same-as-ts` runs the npm package and the TypeScript runtime of main `9d8e725` in Node on onnxruntime-web's WASM
+backend with one thread, on the recorded PCM of the four release songs with seeds 0, 1 and 2, plus a controls case
+(Hesitation Snow, seed 1, half long notes and three sections). It compares charts, `.osu` text and receipts after
+normalising only the runtime name and the wall-clock fields. The core computes `exp`, `log` and the other
+transcendental functions with Rust's `libm` crate, where the TypeScript runtime used V8's `Math`; their last bits can
+differ, which on other input could show in receipt digits or, at a near-tie, a sampled choice.
 
-The check runs all recorded graph calls first, then the complete public API
-with replayed draws and again with the runtime PRNG for each song. It checks
-sample choices including discarded difficulty passes, final objects, exact
-`.osu` text except the generator comment, zip contents, and chart legality.
-Only random variates and input PCM are replayed. Intermediate outputs remain
-comparison targets. Graph tolerance is `1e-4`; the grid report includes the
-floating error and requires identical whole-ms positions and Mel-frame indices
-(`1e-4 ms` numeric tolerance). Continuous grid values are not bit-identical.
+`ln-gaps` generates the four release songs from their recorded PCM with seeds 0 to 4, reads the Python release charts,
+and counts long-note tails at or after the next head in their lane, gaps under the inspector's drawn head height per
+visual speed, and gaps in which the drawn tail cap reaches into the next head with and without the inspector's tail
+shortening (`site/player.ts`).
 
-Stage 5 passes when the hit objects are identical, every timing-point value is
-within 1e-6 ms, and the rest of the `.osu` text is identical (generator comment
-aside); the full-precision timing text may differ in its last digits. Least-squares
-rounding is not reproducible bit for bit between NumPy and JavaScript, Python's
-own ONNX replay already differs from the release in the last digit, and no
-chart reader uses that precision. The one such difference, Catch the Moment's
-first timing point:
+Replay parity with the Python release is checked in ensomi-runtime (`conformance/generate/wasm-parity.json`) and in
+the browser by `tests/browser/diagnostics.mts wasm control` (recorded Python PCM): all 6,178 hit objects and every
+recorded draw on the four songs.
 
-```text
-Python release: 1659,631.3408705468946,4,2,0,100,1,0
-TypeScript:     1659,631.3408705352042,4,2,0,100,1,0
-```
+The browser tests and their results are in `tests/browser/README.md` and `artifacts/browser-test/report.md`.
 
-The beat-length difference is about `1.17e-8 ms`; Python's own recorded ONNX
-replay writes `631.3408705468947` there. TypeScript grid fitting from recorded
-features reaches that same last-bit value; the extra difference from PCM comes
-from frontend float arithmetic.
+## Files
 
-Large generated files are under ignored `artifacts/bulk/`. Small reports stay
-in `artifacts/`. Diagnostic scripts `frontend.ts`, `grid.ts`, `rows.ts`, and
-`arrange.ts` can isolate the earlier stages using their saved intermediates.
-`python_grid.py` reads the Python implementation without modifying it.
-`resampler_coefficients.py` regenerates the generic FIR data using that
-repository's soxr installation; it does not consume song data.
-
-## Files and browser handoff
-
-- `src/models.ts`, `binary.ts`, `runtime_assets.ts`: model/file loading and arrays.
-- `src/audio.ts`, `fft.ts`, `decode_audio.ts`, `grid.ts`, `fitter/`: PCM and timing.
-- `src/rows.ts`, `random.ts`, `strain.ts`: figure decoding and workload.
-- `src/prior.ts`, `controls.ts`, `arrange.ts`, `difficulty.ts`, `r2/`: R2 system.
-- `src/types.ts`, `capabilities.ts`, `generate.ts`, `export.ts`, `index.ts`: API/export.
-- `checks/`: Node replay, stage diagnostics, and coefficient generator.
-- `assets/`: FIR coefficients; `artifacts/`: parity and diagnostic reports.
-
-The page in `../../site` bundles this package with esbuild and runs generation
-in a Web Worker. Default loading chooses WebGPU when `navigator.gpu` exists,
-otherwise WASM (`onnxruntime-web/wasm`); `backend` overrides the choice. With
-WebGPU only BeatThis uses it (`GPU_GRAPHS` in `src/models.ts`): the rows and R2
-graphs run once per beat or head row on small inputs, where WebGPU's per-call
-transfers cost more than the CPU. `loadModels` downloads all files at once and
-releases the sessions it created if loading fails; the page retries a failed
-WebGPU load on WASM. `models.array` reads each array once. The resampler assets under `assets/` are fetched only for raw PCM without
-the two frontend streams; `decodeAudio` supplies both, so the page never
-fetches them.
-
-WebGPU operator coverage and parity for these graphs, browser memory use, and
-browser audio-decode parity remain untested in a browser. The graphs use dynamic
-time/candidate dimensions and int64 indexing/state; a browser check must
-verify their provider placement and the cost of per-row calls. Serve model/WASM/FIR assets
-with suitable CORS and MIME types; configure ORT's WASM paths and threading for
-the deployment. Loading all six sessions retains their weights in memory.
+- `checks/same-as-ts.mjs`: the Node comparison with the TypeScript runtime.
+- `checks/ln-gaps.mjs`: long-note tails against the next head in their lane.
+- `checks/resampler_coefficients.py`: how the soxr tables now shipped in the package's `resampler/` were made; it
+  writes them to `assets/` here, for comparison.
+- `tests/browser/`: the page and runtime tests in Chrome.
+- `artifacts/`: `same-as-ts.json`, the browser-test report and the speed report of #4.

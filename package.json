@@ -1,0 +1,24 @@
+{
+  "name": "ensomi-web",
+  "private": true,
+  "license": "MIT",
+  "type": "module",
+  "dependencies": {
+    "@ensomi/runtime": "0.1.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.25.9",
+    "fflate": "0.8.2",
+    "onnxruntime-web": "1.23.2",
+    "playwright": "1.54.2",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3"
+  },
+  "scripts": {
+    "build:site": "esbuild site/app.ts site/worker.ts --bundle --format=esm --target=es2022 --minify --outdir=public --log-level=warning && cp node_modules/@ensomi/runtime/pkg/ensomi_generate_wasm_bg.wasm public/ensomi-runtime.wasm",
+    "typecheck": "tsc -p packages/runtime",
+    "typecheck:site": "tsc -p site",
+    "serve:site": "node site/serve.mjs",
+    "same-as-ts": "node --import tsx packages/runtime/checks/same-as-ts.mjs"
+  }
+}

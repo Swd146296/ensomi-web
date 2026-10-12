@@ -1,4 +1,4 @@
-import type { Chart } from '../packages/runtime/src/types.js';
+import type { Chart } from '@ensomi/runtime';
 
 /**
  * Live chart inspector modelled on Beatmap Lens's falling-note viewport: chart time is the audio
@@ -6,9 +6,19 @@ import type { Chart } from '../packages/runtime/src/types.js';
  * seeks to the time under the pointer, a drag scrubs, the wheel and Up/Down navigate, and a
  * vertical overview (bottom = song start) shows note density, the visible window and the playhead.
  */
-export const VISUAL_SPEEDS = [120, 240, 480, 720];
+export const VISUAL_SPEEDS = [240, 480, 720, 960];
 export const RATES = [0.5, 0.75, 1, 1.25, 1.5];
 const JUDGE = 0.82, ARROW_STEP_PX = 40, DENSITY_BINS = 256;
+/** Drawn heights in px of a note head and of a long note's tail cap, each centred on its time. */
+export const NOTE_HEIGHT = 14, TAIL_HEIGHT = 6;
+/**
+ * A long note's tail cap and body end are drawn TAIL_SHORTEN_MS before its end time, but not before its head, so that a
+ * tail close before the next head in its lane leaves a gap. Drawing only: the chart, the .osu and judgement keep the end
+ * time. osu!lazer, osu!stable and Quaver draw the tail at the end time; Etterna's noteskins stop the hold body short of
+ * the tail by a pixel offset. The rule is a time so that any renderer can apply it before mapping time to position.
+ */
+export const TAIL_SHORTEN_MS = 10;
+export const tailTime = (start: number, end: number) => Math.max(start, end - TAIL_SHORTEN_MS);
 const color = {
     ground: '#130e1a', laneA: '#1d1627', laneB: '#191220', beat: 'rgba(181, 179, 239, 0.12)', bar: 'rgba(181, 179, 239, 0.32)',
     tap: '#eaa0b7', hold: '#b5b3ef', holdBody: 'rgba(181, 179, 239, 0.42)', judge: '#ff879f', glow: 'rgba(255, 135, 159, 0.28)',
@@ -47,7 +57,7 @@ function lowerBound(values: number[], x: number) {
 const clamp = (x: number, lo: number, hi: number) => Math.min(Math.max(x, lo), hi);
 
 export class Player {
-    speed = 240;
+    speed = 720;
     private track?: Track;
     private starts: number[] = [];
     private longest = 0;
@@ -173,20 +183,20 @@ export class Player {
                 if (o.start_ms < lo) continue;
                 ctx.fillStyle = color.tap;
                 ctx.beginPath();
-                ctx.roundRect(x, head - 7, nw, 14, 7);
+                ctx.roundRect(x, head - NOTE_HEIGHT / 2, nw, NOTE_HEIGHT, NOTE_HEIGHT / 2);
                 ctx.fill();
                 continue;
             }
             if (o.end_ms < lo) continue;
-            const tail = y(o.end_ms);
+            const tail = y(tailTime(o.start_ms, o.end_ms));
             ctx.fillStyle = color.holdBody;
             ctx.beginPath();
             ctx.roundRect(x + nw * 0.14, tail, nw * 0.72, head - tail, 6);
             ctx.fill();
             ctx.fillStyle = color.hold;
             ctx.beginPath();
-            ctx.roundRect(x, head - 7, nw, 14, 7);
-            ctx.roundRect(x + nw * 0.14, tail - 3, nw * 0.72, 6, 3);
+            ctx.roundRect(x, head - NOTE_HEIGHT / 2, nw, NOTE_HEIGHT, NOTE_HEIGHT / 2);
+            ctx.roundRect(x + nw * 0.14, tail - TAIL_HEIGHT / 2, nw * 0.72, TAIL_HEIGHT, TAIL_HEIGHT / 2);
             ctx.fill();
         }
         ctx.fillStyle = color.glow;

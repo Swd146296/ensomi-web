@@ -1,7 +1,9 @@
-import { generateChart, loadModels, localFilesSource, type FileSource, type Models } from '../packages/runtime/src/index.js';
+import { generateChart, loadModels, localFilesSource, type FileSource, type Models } from '@ensomi/runtime';
 
 /** Generation worker: loads the model once, then generates charts from PCM the page decoded. */
 const ORT_WASM = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.2/dist/';
+// The runtime's Wasm core, copied beside this script by `npm run build:site`.
+const CORE = new URL('ensomi-runtime.wasm', self.location.href);
 // Model files are cached by URL under this name; change it when the files behind the model URL change.
 const CACHE = 'ensomi-r2-1.0';
 
@@ -65,7 +67,7 @@ onmessage = async ({ data }: MessageEvent) => {
             // WebAssembly threads need cross-origin isolation (public/_headers). Next to WebGPU, WebAssembly runs only the
             // per-row graphs, which are fastest on two threads; on its own it also runs BeatThis, which gains up to four.
             const threads = (backend: string) => self.crossOriginIsolated ? Math.min(backend === 'webgpu' ? 2 : 4, navigator.hardwareConcurrency) : 1;
-            const load = (backend: 'webgpu' | 'wasm') => loadModels(source, { backend, wasm: { wasmPaths: ORT_WASM, numThreads: threads(backend) } });
+            const load = (backend: 'webgpu' | 'wasm') => loadModels(source, { backend, core: CORE, wasm: { wasmPaths: ORT_WASM, numThreads: threads(backend) } });
             let backend: 'webgpu' | 'wasm' = data.backend !== 'wasm' && await webgpuAdapter() ? 'webgpu' : 'wasm';
             try {
                 models = await load(backend);

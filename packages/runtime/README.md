@@ -12,13 +12,12 @@ the runtime's name (see Checks).
 
 ## How the page uses it
 
-- `site/worker.ts` calls `loadModels` with the core copied to `public/ensomi-runtime.wasm` and the package's soxr
-  resampler tables copied to `public/resampler/` (both by `npm run build:site`), since bundling moves the module away
-  from the package's own files.
-- `site/audio.ts` decodes the song with WebAudio at the file's own sample rate, read from its header, and the worker
-  passes that mono PCM to `generateChart`. The core converts it to BeatThis's 22050 Hz with the soxr table for that
-  rate and to the rows model's 24000 Hz by linear interpolation, as the Python release does. The package's
-  `decodeAudio` lets WebAudio resample to both rates instead, which does not reproduce the Python release's timing
+- `site/worker.ts` calls `loadModels` with the core copied to `public/ensomi-runtime.wasm` by `npm run build:site`,
+  since bundling moves the module away from the package's own files.
+- `site/app.ts` decodes the song with the package's `decodeAudio`: WebAudio decodes it at 24000 and 22050 Hz, and the
+  worker passes both streams to `generateChart`, so the core converts no rate and reads no resampler table. WebAudio's
+  resampler is not the Python release's, which moves the beat grid by up to 1.3 ms against the release charts; the
+  report gives the drift and why the page does not decode at the file's own rate instead
   (`artifacts/browser-test/report.md`).
 - Seeds drive the runtime's `mulberry32-u53-v1` generator, not Python's RNG, so a seed does not give the command
   line's chart. The page draws a random seed for seed 0 and shows the seed used.
@@ -50,8 +49,8 @@ visual speed, and gaps in which the drawn tail cap reaches into the next head wi
 shortening (`site/player.ts`).
 
 Replay parity with the Python release is checked in ensomi-runtime (`conformance/generate/wasm-parity.json`) and in
-the browser by `tests/browser/diagnostics.mts wasm control` (recorded Python PCM) and `wasm native` (the page's own
-decoding of the original audio files): all 6,178 hit objects and every recorded draw on the four songs.
+the browser by `tests/browser/diagnostics.mts wasm control` (recorded Python PCM): all 6,178 hit objects and every
+recorded draw on the four songs.
 
 The browser tests and their results are in `tests/browser/README.md` and `artifacts/browser-test/report.md`.
 

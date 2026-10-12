@@ -1,9 +1,10 @@
-import { generateChart, loadModels, localFilesSource, type FileSource, type Models } from '@ensomi/runtime';
+import { generateChart, loadModels, localFilesSource, urlSource, type FileSource, type Models } from '@ensomi/runtime';
 
 /** Generation worker: loads the model once, then generates charts from PCM the page decoded. */
 const ORT_WASM = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.2/dist/';
-// The runtime's Wasm core, copied beside this script by `npm run build:site`.
-const CORE = new URL('ensomi-runtime.wasm', self.location.href);
+// The runtime's Wasm core and its resampler tables, copied beside this script by `npm run build:site`. The core reads
+// the tables only for exact timing, the three for the song's rate.
+const CORE = new URL('ensomi-runtime.wasm', self.location.href), RESAMPLER = urlSource(new URL('resampler/', self.location.href).href);
 // Model files are cached by URL under this name; change it when the files behind the model URL change.
 const CACHE = 'ensomi-r2-1.0';
 
@@ -67,7 +68,7 @@ onmessage = async ({ data }: MessageEvent) => {
             // WebAssembly threads need cross-origin isolation (public/_headers). Next to WebGPU, WebAssembly runs only the
             // per-row graphs, which are fastest on two threads; on its own it also runs BeatThis, which gains up to four.
             const threads = (backend: string) => self.crossOriginIsolated ? Math.min(backend === 'webgpu' ? 2 : 4, navigator.hardwareConcurrency) : 1;
-            const load = (backend: 'webgpu' | 'wasm') => loadModels(source, { backend, core: CORE, wasm: { wasmPaths: ORT_WASM, numThreads: threads(backend) } });
+            const load = (backend: 'webgpu' | 'wasm') => loadModels(source, { backend, core: CORE, runtimeSource: RESAMPLER, wasm: { wasmPaths: ORT_WASM, numThreads: threads(backend) } });
             let backend: 'webgpu' | 'wasm' = data.backend !== 'wasm' && await webgpuAdapter() ? 'webgpu' : 'wasm';
             try {
                 models = await load(backend);
@@ -82,8 +83,10 @@ onmessage = async ({ data }: MessageEvent) => {
             post({ type: 'loaded', capabilities: models.capabilities, provider: backend, threads: threads(backend), seconds: (performance.now() - start) / 1000 });
         }
         else if (data.type === 'generate') {
-            const pcm = { samples: data.mel, channels: 1, mel: data.mel, beatthis: data.beatthis };
-            const result = await generateChart(models!, pcm, 24000, data.request, { audio: data.audio, onProgress: ({ phase }) => post({ type: 'phase', phase }) });
+            // Exact timing sends mono PCM at the song's own rate and the core makes both frontend streams; otherwise
+            // WebAudio made them at 24000 and 22050 Hz.
+            const pcm = data.rate ? data.pcm : { samples: data.mel, channels: 1, mel: data.mel, beatthis: data.beatthis };
+            const result = await generateChart(models!, pcm, data.rate ?? 24000, data.request, { audio: data.audio, onProgress: ({ phase }) => post({ type: 'phase', phase }) });
             post({ type: 'result', result }, result.osz ? [result.osz.buffer] : []);
         }
     }

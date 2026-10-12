@@ -2,8 +2,8 @@
 
 Static site for https://ensomi.app: the ensomi R2 page with an in-browser chart generator, deployed as Cloudflare Workers static assets (`wrangler.jsonc`).
 
-- `public/`: the page (`index.html`, `styles.css`, images). The build adds `app.js`, `worker.js` and the runtime's `ensomi-runtime.wasm`, which are not committed.
-- `site/`: the page's TypeScript. `app.ts` drives the form, progress, downloads and inspector; `worker.ts` loads the model and generates in a Web Worker; `player.ts` is the live inspector; `serve.mjs` serves the page locally.
+- `public/`: the page (`index.html`, `styles.css`, images). The build adds `app.js`, `worker.js`, the runtime's `ensomi-runtime.wasm` and its resampler tables (`resampler/`), which are not committed.
+- `site/`: the page's TypeScript. `app.ts` drives the form, progress, downloads and inspector; `audio.ts` decodes the song at its own sample rate for the Exact timing option, so that the runtime converts the rate as the Python release does; `worker.ts` loads the model and generates in a Web Worker; `player.ts` is the live inspector; `serve.mjs` serves the page locally.
 - `package.json`: the site's one dependency, [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) at exactly 0.1.1, the WebAssembly build of ensomi's Rust runtime with its JavaScript API over ONNX Runtime Web, and the build and test tools.
 - `packages/runtime/`: the runtime's checks in this site, the browser tests and their report ([README](packages/runtime/README.md)).
 - `docs/brand.md`: name, principles, palette and voice.
@@ -17,7 +17,7 @@ Node is needed; install the dependencies with `npm ci` in the repository root.
 ```sh
 npm ci
 npm run typecheck:site
-npm run build:site            # writes public/app.js, worker.js and ensomi-runtime.wasm
+npm run build:site            # writes public/app.js, worker.js, ensomi-runtime.wasm and resampler/
 npm run serve:site -- 8080    # http://127.0.0.1:8080/, model from Hugging Face
 # or with a local copy of the model repository, served at /model/:
 npm run serve:site -- 8080 ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2

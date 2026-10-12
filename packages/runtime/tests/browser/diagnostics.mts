@@ -13,10 +13,12 @@ await mkdir(bulk,{recursive:true});
 const backend=process.argv[2]||'wasm',mode=process.argv[3]||'replay';
 await build({entryPoints:[join(import.meta.dirname,'diagnostics.ts')],bundle:true,format:'esm',target:'es2022',outfile:join(bulk,'diagnostics.js')});
 await build({entryPoints:[join(pkg,'src/decode_audio.js')],bundle:true,format:'esm',target:'es2022',outfile:join(bulk,'decode.js')});
+// The page's decoding for exact timing (native rate, the core resamples), for the native mode.
+await build({entryPoints:[join(runtime,'../../site/audio.ts')],bundle:true,format:'esm',target:'es2022',outfile:join(bulk,'audio.js')});
 const recordings=new Map();async function rec(song:string){if(!recordings.has(song))recordings.set(song,await Recording.open(join(modelRepo,'artifacts/runtime-ref/bulk',song)));return recordings.get(song);}
 const server=createServer(async(req,res)=>{try{const p=new URL(req.url!,'http://localhost').pathname;let file;
  if(p==='/'){res.setHeader('Content-Type','text/html');res.end('<title>Ensomi browser diagnostics</title><h1>Ensomi runtime browser diagnostics</h1>');return;}
- if(p==='/diagnostics.js'||p==='/decode.js')file=join(bulk,p.slice(1));
+ if(p==='/diagnostics.js'||p==='/decode.js'||p==='/audio.js')file=join(bulk,p.slice(1));
  else if(p.startsWith('/model/'))file=join(modelRepo,'artifacts/release-r2/bulk/hf/ensomi-r2',p.slice(7));
  else if(p.startsWith('/assets/'))file=join(pkg,'resampler',p.slice(8));
  else if(p.startsWith('/pkg/'))file=join(pkg,p.slice(1));
@@ -46,7 +48,8 @@ try{
  if(mode==='networks')await command({type:'networks',song:'catch-the-moment'},'networks-result');
  else for(const song of mode==='compare'?['catch-the-moment']:['hesitation-snow','saigetsu','catch-the-moment','adventure']){
   await page.evaluate(song=>(window as any).song=song,song);
-  if(mode!=='control')await page.evaluate(async(song)=>{const {decodeAudio}=await import('/decode.js');const bytes=await(await fetch('/song/'+song)).arrayBuffer();const decoded=await decodeAudio(bytes);(window as any).decoded=decoded;(window as any).song=song;},song);
+  if(mode==='native')await page.evaluate(async(song)=>{const {decodeSong}=await import('/audio.js');const bytes=await(await fetch('/song/'+song)).arrayBuffer();(window as any).decoded=await decodeSong(bytes);(window as any).song=song;},song);
+  else if(mode!=='control')await page.evaluate(async(song)=>{const {decodeAudio}=await import('/decode.js');const bytes=await(await fetch('/song/'+song)).arrayBuffer();const decoded=await decodeAudio(bytes);(window as any).decoded=decoded;(window as any).song=song;},song);
   if(mode==='pcm'){
    const pcm=await page.evaluate(async(song)=>{
     const meta=await(await fetch('/ref/'+song+'/audio-meta')).json(),bytes=await(await fetch('/song/'+song)).arrayBuffer();const native=await new OfflineAudioContext(1,1,meta.rate).decodeAudioData(bytes),mel=(window as any).decoded.pcm.mel;
@@ -62,7 +65,7 @@ try{
    },song);results.push(pcm);console.log(song,JSON.stringify(pcm));await writeFile(join(out,`diagnostics-${backend}-${mode}.json`),JSON.stringify(results,null,2));continue;
   }
   const start=await page.evaluate(()=>(window as any).events.length);
-  await page.evaluate(mode=>{const {mel,beatthis}=(window as any).decoded?.pcm??{};(window as any).w.postMessage({type:mode==='control'?'replay':mode,referencePCM:mode==='control',song:(window as any).song,mel,beatthis});},mode);
+  await page.evaluate(mode=>{const {mel,beatthis}=(window as any).decoded?.pcm??{},native=mode==='native'?(window as any).decoded:{};(window as any).w.postMessage({type:mode==='control'||mode==='native'?'replay':mode,referencePCM:mode==='control',song:(window as any).song,mel,beatthis,...native});},mode);
   await page.waitForFunction(start=>(window as any).events.slice(start).some((e:any)=>['replay-result','compare-result','error'].includes(e.type)),start,{timeout:600000});
   const r=await page.evaluate(start=>(window as any).events.slice(start).filter((e:any)=>['replay-result','compare-result','error'].includes(e.type)),start);results.push(...r);console.log(song,JSON.stringify(r).slice(0,4000));await writeFile(join(out,`diagnostics-${backend}-${mode}.json`),JSON.stringify(results,null,2));
  }

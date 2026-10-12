@@ -118,8 +118,10 @@ Snow, seed 1, half long notes and three sections). It compares charts, `.osu`
 text and receipts after normalising only the runtime name and the wall-clock
 fields. On bings-mac (2026-10-12, the build in `provenance.json`) all 13 cases
 are equal and the capabilities are equal. Mean wall time per chart: TypeScript
-23.1 s, Wasm 22.8 s, of which BeatThis is about 17 s; the Wasm core's PCM
-resampling is faster and its other phases slower.
+22.6 s, Wasm 21.2 s, of which BeatThis is about 17 s. The core computes `exp`,
+`log` and the other transcendental functions with Rust's `libm` crate, where the
+TypeScript runtime used V8's `Math`; their last bits can differ, which on other
+input could show in receipt digits or, at a near-tie, a sampled choice.
 
 Replay parity with the Python release is checked in ensomi-runtime
 (`conformance/generate/wasm-parity.json`) and in the browser by
@@ -129,9 +131,11 @@ recorded draw on the four songs.
 The browser tests and their results are in `tests/browser/README.md` and
 `artifacts/browser-test/report.md`. In headless Chrome the page generates the
 same seed-0 charts as main's TypeScript build on WebGPU and on WebAssembly, and
-the suite passes. Warm generation is slower than main's: 1.26 times on WebGPU
-and 1.09 times on WebAssembly (median of paired runs over the four songs). The
-report gives the causes; removing them needs changes in ensomi-runtime.
+the suite passes. Warm generation is faster than main's: new ÷ main 0.87 to
+0.96 on WebGPU and 0.94 to 0.97 on WebAssembly per song (median of paired runs).
+While BeatThis runs on the GPU, `generateChart` lets the core compute the
+Log-Mel spectrogram (`work()`), as the TypeScript runtime did. The renderer's
+peak memory is 0.2 to 0.5 GiB higher than main's; the report gives the causes.
 
 ## Files
 

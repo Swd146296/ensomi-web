@@ -1,6 +1,44 @@
 # Ensomi R2 browser tests
 
-## Wasm runtime, 2026-10-12, bings-mac
+## Wasm runtime after the core speed fixes, 2026-10-12, bings-mac
+
+**The page now generates with ensomi-runtime `5840ea6` and is faster warm than main's TypeScript build on every song: new ÷ main 0.87 to 0.96 on WebGPU and 0.94 to 0.97 on WebAssembly (median of 5 or 6 back-to-back pairs per song and provider). Charts are identical to main's, `npm run same-as-ts` finds all 13 cases equal, and the browser suite passes. The renderer's peak memory is still 0.2 to 0.5 GiB higher.**
+
+What changed in the core (causes in the section below):
+
+- **Math.** `exp`, `log`, `log1p`, `log2`, `sin`, `cos`, `atan2` and `hypot` come from the `libm` crate on every target. The port of V8's `Math` with fused multiply-adds is gone, and with it the software `fma` in WebAssembly. Charts, `.osu` text and receipts are still equal to the TypeScript runtime's on all 13 `same-as-ts` cases (mean wall per chart in Node: TypeScript 22.6 s, Wasm 21.2 s), and replay parity with the Python release passes natively and in Wasm.
+- **Overlap.** After the core asks for a BeatThis run, `generateChart` calls the core's `work()` until the outputs arrive; each call computes 64 Log-Mel frames. The Mel phase left after BeatThis is now 0.06 s on WebGPU, as in main.
+- The carried R2 state is moved into the commit graph's inputs instead of copied, and the samples are not mixed down when both decoded streams are given.
+
+**Old against new.** `tests/browser/old-vs-new.sh` in two sessions of three rounds (labels `libm` and `libm2`), procedure as below. Four runs failed to load the model because the page could not fetch ONNX Runtime's Wasm from the CDN (`Failed to fetch`, three of main's, one of the new page's); their pairs are left out. Other agents' Xcode builds ran throughout: the 1-minute load average before a run was 2.5 to 53.7, median 5.2, so single pairs range widely and the medians are the comparison.
+
+| Song | Provider | Pairs | main warm, s | new warm, s | new / main | Pair range | main peak, GiB | new peak, GiB | Same chart |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Adventure | WebGPU | 6 | 5.97 | 5.51 | 0.87 | 0.63–1.11 | 3.57 | 3.79 | yes |
+| Catch the Moment | WebGPU | 6 | 3.77 | 2.96 | 0.87 | 0.76–1.11 | 2.01 | 2.20 | yes |
+| Hesitation Snow | WebGPU | 5 | 3.20 | 3.07 | 0.96 | 0.88–1.06 | 2.33 | 2.55 | yes |
+| SaiGetsu | WebGPU | 5 | 2.67 | 2.77 | 0.96 | 0.90–1.22 | 2.06 | 2.25 | yes |
+| Adventure | WebAssembly | 6 | 13.08 | 12.14 | 0.95 | 0.72–1.42 | 3.83 | 4.33 | yes |
+| Catch the Moment | WebAssembly | 5 | 7.47 | 7.27 | 0.97 | 0.93–1.03 | 2.51 | 2.88 | yes |
+| Hesitation Snow | WebAssembly | 5 | 9.09 | 8.44 | 0.97 | 0.84–1.06 | 2.80 | 3.07 | yes |
+| SaiGetsu | WebAssembly | 6 | 7.10 | 7.09 | 0.94 | 0.88–1.09 | 2.61 | 2.92 | yes |
+
+Receipt phase seconds, median over all warm runs of both sessions:
+
+| Provider | Build | Spectrogram | BeatThis | Mel | Grid | Rows | Arrangement | Total |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| WebGPU | main | 0.18 | 1.55 | 0.06 | 0.26 | 0.25 | 1.46 | 3.71 |
+| WebGPU | new | 0.14 | 1.50 | 0.06 | 0.17 | 0.17 | 1.31 | 2.99 |
+| WebAssembly | main | 0.17 | 6.42 | 0.54 | 0.24 | 0.21 | 1.26 | 8.45 |
+| WebAssembly | new | 0.13 | 6.49 | 0.40 | 0.12 | 0.10 | 1.34 | 8.16 |
+
+The core's own phases are now faster than main's; arrangement, mostly ONNX Runtime's R2 calls, is about equal.
+
+**Memory.** The new page still peaks higher. A Node probe of the two runtimes on Adventure with the page's input (decoded Mel and BeatThis streams, WASM backend, one thread) gives peak RSS 1,740 MiB against 1,558 MiB, ArrayBuffer bytes 359 MiB against 101 MiB, of which 119 MiB is the core's linear memory. WebAssembly memory keeps its high-water mark, and the core starts with three copies of the input streams (the samples, which the page passes as the Mel stream, the Mel stream and the BeatThis stream: 56 MB for Adventure). The rest is JavaScript copies of tensors crossing between the core and ONNX Runtime (the R2 state, 0.5 MB per head row, crosses both ways where main passed one output tensor back as the next input). Both are left as they are.
+
+**Suite.** Every step of the suite above ran headless on the new build and exited 0: the page matrix (30 generations, all charts valid, no sampling fallbacks, the five-second section rejected; seed-0 hashes as below for all four songs on both providers and every source), player and wheel fixtures (60 fps, zero drift), `fallback.mjs`, `diagnostics.mts` (networks within 9.3e-5 of the recordings; `wasm control` equal on all 6,178 hit objects with every draw consumed; `wasm replay` stops at the same draws as before), mobile, contrast and link checks, all 50 `.osz` in `validate-downloads.py`, and `load-benchmark.mjs`. Cold loads today were slow for both builds while the CDN fetches were (median 26 s for main and 33 s for the new page on WebGPU in the timing runs), so this report makes no claim about load time.
+
+## Wasm runtime (ensomi-runtime 7130c47), 2026-10-12, bings-mac
 
 **The page generates with the Wasm build of ensomi-runtime (`packages/runtime`, vendored from `7130c47`) and its charts are identical to main's TypeScript build on WebGPU and WebAssembly. The browser suite passes. Warm generation is slower: 1.16 to 1.27 times main's on WebGPU and 1.05 to 1.09 times on WebAssembly, and the renderer's peak memory is 0.2 to 0.4 GiB higher. Build flags do not close the gap; it comes from the core.**
 

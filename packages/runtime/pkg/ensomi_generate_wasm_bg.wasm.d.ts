@@ -9,6 +9,7 @@ export const replaydraws_new: () => number;
 export const replaydraws_recorded: (a: number) => number;
 export const wasmgenerator_new: (a: number, b: any, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: bigint, k: number, l: number, m: number, n: number, o: number, p: any, q: number) => [number, number, number];
 export const wasmgenerator_step: (a: number, b: any) => [number, number, number];
+export const wasmgenerator_work: (a: number) => number;
 export const wasmmodels_capabilities: (a: number) => [number, number];
 export const wasmmodels_new: (a: number, b: number, c: any) => [number, number, number];
 export const wasmmodels_requiredFiles: (a: number, b: number) => [number, number, number];

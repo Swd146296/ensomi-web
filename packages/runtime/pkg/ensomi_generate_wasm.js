@@ -107,6 +107,15 @@ export class WasmGenerator {
         }
         return takeFromExternrefTable0(ret[0]);
     }
+    /**
+     * Does a slice of the work that needs no graph outputs (the Log-Mel spectrogram while BeatThis
+     * runs) and returns whether any is left. Call it after a `run` step while the graph runs.
+     * @returns {boolean}
+     */
+    work() {
+        const ret = wasm.wasmgenerator_work(this.__wbg_ptr);
+        return ret !== 0;
+    }
 }
 if (Symbol.dispose) WasmGenerator.prototype[Symbol.dispose] = WasmGenerator.prototype.free;
 

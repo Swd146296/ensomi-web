@@ -26,6 +26,11 @@ export class WasmGenerator {
      * `{type, dims, data}` by output name, and `undefined` otherwise.
      */
     step(outputs: any): any;
+    /**
+     * Does a slice of the work that needs no graph outputs (the Log-Mel spectrogram while BeatThis
+     * runs) and returns whether any is left. Call it after a `run` step while the graph runs.
+     */
+    work(): boolean;
 }
 
 export class WasmModels {
@@ -61,6 +66,7 @@ export interface InitOutput {
     readonly replaydraws_recorded: (a: number) => number;
     readonly wasmgenerator_new: (a: number, b: any, c: number, d: number, e: number, f: number, g: number, h: number, i: number, j: bigint, k: number, l: number, m: number, n: number, o: number, p: any, q: number) => [number, number, number];
     readonly wasmgenerator_step: (a: number, b: any) => [number, number, number];
+    readonly wasmgenerator_work: (a: number) => number;
     readonly wasmmodels_capabilities: (a: number) => [number, number];
     readonly wasmmodels_new: (a: number, b: number, c: any) => [number, number, number];
     readonly wasmmodels_requiredFiles: (a: number, b: number) => [number, number, number];

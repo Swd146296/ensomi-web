@@ -1,8 +1,0 @@
-{
-  "repository": "https://github.com/ensomi-labs/runtime",
-  "commit": "5840ea697e53ea3bdc3606fc9ad90b2e4c177623",
-  "build": "scripts/wasm-build.sh",
-  "copied": { "src/": "js/src/", "pkg/": "js/pkg/" },
-  "rustc": "rustc 1.99.0 (b940084d7 2026-09-28)",
-  "wasm-bindgen": "wasm-bindgen 0.2.129"
-}

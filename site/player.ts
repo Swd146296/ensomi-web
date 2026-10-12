@@ -1,4 +1,4 @@
-import type { Chart } from '../packages/runtime/src/index.js';
+import type { Chart } from '@ensomi/runtime';
 
 /**
  * Live chart inspector modelled on Beatmap Lens's falling-note viewport: chart time is the audio

@@ -1,4 +1,4 @@
-import { generateChart, loadModels, localFilesSource, type FileSource, type Models } from '../packages/runtime/src/index.js';
+import { generateChart, loadModels, localFilesSource, type FileSource, type Models } from '@ensomi/runtime';
 
 /** Generation worker: loads the model once, then generates charts from PCM the page decoded. */
 const ORT_WASM = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.2/dist/';

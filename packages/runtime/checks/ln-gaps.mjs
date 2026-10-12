@@ -9,11 +9,10 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import * as ort from 'onnxruntime-web/wasm';
-import { loadModels, generateChart } from '../src/index.js';
+import { loadModels, generateChart } from '@ensomi/runtime';
 import { Recording, parseOsu } from '../../../../ensomi-runtime/js/checks/recording.mjs';
+import { NOTE_HEIGHT, TAIL_HEIGHT, TAIL_SHORTEN_MS, VISUAL_SPEEDS, tailTime } from '../../../site/player.ts';
 
-// site/ has no package.json, so tsx loads player.ts as CommonJS, whose exports arrive as the default export.
-const player = await import('../../../site/player.ts'), { NOTE_HEIGHT, TAIL_HEIGHT, TAIL_SHORTEN_MS, VISUAL_SPEEDS, tailTime } = player.default ?? player;
 const runtime = resolve(import.meta.dirname, '..'), modelRepo = resolve(runtime, '../../../ensomi-model');
 const modelDir = process.env.ENSOMI_MODEL_DIR ?? join(modelRepo, 'artifacts/release-r2/bulk/hf/ensomi-r2');
 const referenceDir = process.env.ENSOMI_REFERENCE_DIR ?? join(modelRepo, 'artifacts/runtime-ref');
@@ -56,7 +55,7 @@ function summary(all) {
 
 const report = { headHeightPx: NOTE_HEIGHT, tailHeightPx: TAIL_HEIGHT, tailShortenMs: TAIL_SHORTEN_MS, speeds, seeds, generated: {}, python: {} };
 const read = async (p) => new Uint8Array(await readFile(join(modelDir, 'onnx', p)));
-const models = await loadModels(read, { ort, backend: 'wasm', wasm: { numThreads: 1 }, core: await readFile(join(runtime, 'pkg/ensomi_generate_wasm_bg.wasm')), runtimeSource: async (p) => new Uint8Array(await readFile(join(runtime, 'assets', p))) });
+const models = await loadModels(read, { ort, backend: 'wasm', wasm: { numThreads: 1 } });
 const generated = [], python = [];
 try {
     for (const song of songs) {

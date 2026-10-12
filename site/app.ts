@@ -1,4 +1,4 @@
-import { ControlStatus, PatternKind, decodeAudio, type GenerateChartRequest, type GenerationResult, type ModelCapabilities, type SectionRequest } from '../packages/runtime/src/index.js';
+import { ControlStatus, PatternKind, decodeAudio, type GenerateChartRequest, type GenerationResult, type ModelCapabilities, type SectionRequest } from '@ensomi/runtime';
 import { Player, RATES, VISUAL_SPEEDS } from './player.js';
 
 /** The generator page: model loading, song decoding, conditions, progress, result and inspector. */

@@ -1,6 +1,5 @@
 /** Test-only worker. Imports the production runtime unchanged; observes graph calls by wrapping its sessions and replays recorded draws through `options.replay`. */
-import { loadModels, generateChart } from '../../src/index.js';
-import { loadCore } from '../../src/core.js';
+import { loadModels, generateChart } from '@ensomi/runtime';
 let models:any, activeGraph='initialization';const gpuWork:any={};
 for(const [type,method] of [['GPUQueue','submit'],['GPUComputePassEncoder','dispatchWorkgroups']]){
  const prototype=(globalThis as any)[type]?.prototype;if(prototype){const original=prototype[method];prototype[method]=function(...args:any[]){const s=gpuWork[activeGraph]??={submit:0,dispatchWorkgroups:0};s[method]++;return original.apply(this,args);};}
@@ -40,7 +39,7 @@ onmessage=async({data})=>{try{
  }
  if(data.type==='replay'){
   // The core stops at the first draw whose name or chosen index differs from the recording; its message is the first divergence.
-  const {song}=data,ref=await json(`/ref/${song}/compact`),core=await loadCore(),replay=new core.ReplayDraws();
+  const {song}=data,ref=await json(`/ref/${song}/compact`),replay=new models.core.ReplayDraws();
   for(const d of ref.draws)replay.add(d.name,d.kind,Float64Array.from(d.values),d.chosen);
   let result,error;let pcm:any={samples:data.mel,channels:1,mel:data.mel,beatthis:data.beatthis},sampleRate=24000;
   if(data.referencePCM){const meta=await json(`/ref/${song}/audio-meta`);pcm={samples:new Float64Array((await get(`/ref/${song}/array/0`)).buffer),channels:meta.channels,mel:new Float32Array((await get(`/ref/${song}/array/2`)).buffer)};sampleRate=meta.rate;}

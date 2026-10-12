@@ -1,15 +1,15 @@
-// Runs this package (the Wasm build) and the TypeScript runtime it replaced in Node on the same PCM, requests and
-// onnxruntime-web WASM backend, and compares charts, .osu text and receipts. Only the runtime name and wall-clock
-// timings may differ. Adapted from ensomi-runtime's js/checks/same-as-ts.mjs.
+// Runs @ensomi/runtime (the Wasm build, from npm) and the TypeScript runtime it replaced in Node on the same PCM,
+// requests and onnxruntime-web WASM backend, and compares charts, .osu text and receipts. Only the runtime name and
+// wall-clock timings may differ. Adapted from ensomi-runtime's js/checks/same-as-ts.mjs.
 //
-// Run from packages/runtime after tests/browser/build-main.sh, which extracts the TypeScript runtime from main:
+// Run after tests/browser/build-main.sh, which extracts the TypeScript runtime from main:
 //   npm run same-as-ts [song...]
 // Reads the release model, the runtime-ref recordings (sibling ensomi-model; ENSOMI_MODEL_DIR and
 // ENSOMI_REFERENCE_DIR override) and the recording reader of the sibling ensomi-runtime. Writes artifacts/same-as-ts.json.
 import { readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import * as ort from 'onnxruntime-web/wasm';
-import { loadModels as loadWasm, generateChart as generateWasm } from '../src/index.js';
+import { loadModels as loadWasm, generateChart as generateWasm } from '@ensomi/runtime';
 import { Recording } from '../../../../ensomi-runtime/js/checks/recording.mjs';
 
 const runtime = resolve(import.meta.dirname, '..'), modelRepo = resolve(runtime, '../../../ensomi-model');
@@ -20,17 +20,19 @@ const { loadModels: loadTs, generateChart: generateTs } = await import(join(runt
 const songs = process.argv.length > 2 ? process.argv.slice(2) : ['hesitation-snow', 'saigetsu', 'catch-the-moment', 'adventure'];
 const seeds = [0, 1, 2];
 const read = async (p) => new Uint8Array(await readFile(join(modelDir, 'onnx', p)));
-const runtimeSource = async (p) => new Uint8Array(await readFile(join(runtime, 'assets', p)));
+// The resampler tables of the npm package, which the Wasm runtime reads by default.
+const tables = new URL('../resampler/', import.meta.resolve('@ensomi/runtime'));
+const runtimeSource = async (p) => new Uint8Array(await readFile(new URL(p, tables)));
 const options = { ort, backend: 'wasm', wasm: { numThreads: 1 }, runtimeSource };
 
-const report = { ort: '1.23.2', backend: 'wasm', threads: 1, node: process.version, provenance: JSON.parse(await readFile(join(runtime, 'provenance.json'), 'utf8')), seeds, cases: [], passed: false };
+const report = { ort: '1.23.2', backend: 'wasm', threads: 1, node: process.version, package: JSON.parse(await readFile(new URL('../package.json', import.meta.resolve('@ensomi/runtime')), 'utf8')).version, seeds, cases: [], passed: false };
 const save = () => writeFile(out, JSON.stringify(report, null, 2) + '\n');
 
 let t = performance.now();
 const tsModels = await loadTs(read, options);
 report.ts_load_seconds = (performance.now() - t) / 1000;
 t = performance.now();
-const wasmModels = await loadWasm(read, { ...options, core: await readFile(join(runtime, 'pkg/ensomi_generate_wasm_bg.wasm')) });
+const wasmModels = await loadWasm(read, options);
 report.wasm_load_seconds = (performance.now() - t) / 1000;
 report.capabilities_equal = JSON.stringify(tsModels.capabilities) === JSON.stringify(wasmModels.capabilities);
 

@@ -4,18 +4,22 @@ import { createServer } from 'node:http';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { createReadStream, statSync } from 'node:fs';
 import { resolve,join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { Recording, parseOsu } from '../../../../../ensomi-runtime/js/checks/recording.mjs';
+// The npm package's directory: its decodeAudio, Wasm core (pkg/) and resampler tables (served as /assets/).
+const pkg=fileURLToPath(new URL('..',import.meta.resolve('@ensomi/runtime')));
 const runtime=resolve(import.meta.dirname,'../..'),modelRepo=resolve(runtime,'../../../ensomi-model'),out=join(runtime,'artifacts/browser-test'),bulk=join(out,'bulk');
 await mkdir(bulk,{recursive:true});
 const backend=process.argv[2]||'wasm',mode=process.argv[3]||'replay';
 await build({entryPoints:[join(import.meta.dirname,'diagnostics.ts')],bundle:true,format:'esm',target:'es2022',outfile:join(bulk,'diagnostics.js')});
-await build({entryPoints:[join(runtime,'src/decode_audio.js')],bundle:true,format:'esm',target:'es2022',outfile:join(bulk,'decode.js')});
+await build({entryPoints:[join(pkg,'src/decode_audio.js')],bundle:true,format:'esm',target:'es2022',outfile:join(bulk,'decode.js')});
 const recordings=new Map();async function rec(song:string){if(!recordings.has(song))recordings.set(song,await Recording.open(join(modelRepo,'artifacts/runtime-ref/bulk',song)));return recordings.get(song);}
 const server=createServer(async(req,res)=>{try{const p=new URL(req.url!,'http://localhost').pathname;let file;
  if(p==='/'){res.setHeader('Content-Type','text/html');res.end('<title>Ensomi browser diagnostics</title><h1>Ensomi runtime browser diagnostics</h1>');return;}
  if(p==='/diagnostics.js'||p==='/decode.js')file=join(bulk,p.slice(1));
  else if(p.startsWith('/model/'))file=join(modelRepo,'artifacts/release-r2/bulk/hf/ensomi-r2',p.slice(7));
- else if(p.startsWith('/assets/')||p.startsWith('/pkg/'))file=join(runtime,p.slice(1));
+ else if(p.startsWith('/assets/'))file=join(pkg,'resampler',p.slice(8));
+ else if(p.startsWith('/pkg/'))file=join(pkg,p.slice(1));
  else if(p.startsWith('/song/')){const summary=JSON.parse(await readFile(join(modelRepo,'artifacts/runtime-ref',p.slice(6),'summary.json'),'utf8'));file=join(modelRepo,summary.audio);}
  else if(p.startsWith('/ref/')){
   const [, ,song,kind,id]=p.split('/'),r=await rec(song);res.setHeader('Content-Type','application/json');

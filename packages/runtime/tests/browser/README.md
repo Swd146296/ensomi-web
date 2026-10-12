@@ -6,7 +6,7 @@ Run from `packages/runtime` with Homebrew Node on PATH. These tests do not edit 
 export PATH=/opt/homebrew/bin:$PATH
 npm run build:site
 npm run typecheck:site
-npm run serve:site -- 8087 ../../../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2
+npm run serve:site -- 8087 ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r2   # npm runs scripts in the repository root
 ```
 
 In a second terminal, from `packages/runtime`:
@@ -37,7 +37,7 @@ node tests/browser/load-benchmark.mjs
 python3 tests/browser/validate-downloads.py
 ```
 
-Prerequisites: installed package dependencies, installed Google Chrome, the sibling `ensomi-model` repository with release model, four dataset songs, and runtime-reference recordings. `ENSOMI_MODEL_DIR` and `ENSOMI_TEST_URL` override the page test's model directory and URL. Keep timing runs sequential.
+Prerequisites: `npm ci` in the repository root, installed Google Chrome, the sibling `ensomi-model` repository with release model, four dataset songs, and runtime-reference recordings. `ENSOMI_MODEL_DIR` and `ENSOMI_TEST_URL` override the page test's model directory and URL. Keep timing runs sequential.
 
 `page-matrix.mjs` uses the actual built page, file/directory inputs, and both download links. It observes worker messages without changing computation. Cold means a fresh browser context with an empty Cache API; warm means a reload of that context after all model assets have been used. An optional fourth argument selects one song, allowing Adventure to be the first generation in its session. `ENSOMI_PLAYER=1` measures note geometry against `HTMLAudioElement.currentTime`, frame cadence, rates, and seeks on the final Adventure result. The memory sampler observes process RSS, not GPU allocation bytes.
 

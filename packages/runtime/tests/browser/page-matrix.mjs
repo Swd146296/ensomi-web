@@ -66,8 +66,8 @@ async function generate(song,warm,section=false,seed='1',tag=''){
   row.archive={names:Object.keys(archive),audioExact:Buffer.from(archive[audioKey]).equals(await readFile(audioPath)),osuExact:strFromU8(archive['generated.osu'])===await readFile(join(bulk,`${label}.osu`),'utf8'),receiptExact:strFromU8(archive['receipt.json']).trim()===data.receipt.receipt_json};
   await writeFile(join(bulk,`${label}-chart.json`),JSON.stringify(data.chart));delete row.chart;delete row.receipt;
  }if(row.error||row.validation?.length||row.archive&&Object.values(row.archive).some(v=>v===false))process.exitCode=1;
- // With exact timing the core converts the rate (receipt stage pcm above 0) and the receipt list has a Timing row; without, no Timing row.
- if(exact?!(row.detail?.seconds.pcm>0&&row.timingShown):row.timingShown!==undefined)process.exitCode=1;report.runs.push(row);await save();console.log('RUN',label,wallSeconds,row.detail?.seconds,row.error,row.validation?.length);
+ // With exact timing the times table has the second decode and the receipt list a Timing row; without, neither.
+ const exactDecode=row.table.some(r=>r.startsWith('Exact-timing decode'));if(exact?!(exactDecode&&row.timingShown):row.timingShown!==undefined||exactDecode)process.exitCode=1;report.runs.push(row);await save();console.log('RUN',label,wallSeconds,row.detail?.seconds,row.error,row.validation?.length);
  await page.locator(data.chart?'#result':'#error').screenshot({path:join(out,`screenshots/${label}.png`)});
  return row;
 }

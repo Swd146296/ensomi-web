@@ -83,7 +83,9 @@ try {
             const r = window.__results[n];
             if (r.error) return r;
             const receipt = JSON.parse(r.receipt.receipt_json);
-            return { segments: receipt.rows.segments, end: r.chart.duration_ms, pcmSeconds: receipt.seconds.pcm };
+            // The PCM stage runs when the song is chosen; the times table has it, the receipt does not.
+            const pcm = [...document.querySelectorAll('#times tr')].find(tr => tr.cells[0].textContent === 'Prepare PCM');
+            return { segments: receipt.rows.segments, end: r.chart.duration_ms, pcmSeconds: parseFloat(pcm.cells[1].textContent) };
         }, n);
         const python = JSON.parse(await readFile(join(reference, 'receipt.json'), 'utf8')).rows.segments;
         const row = { song: slug, status: await page.locator('#song-status').textContent(), ...(result.error ? result : { python, browser: result.segments, pcmSeconds: result.pcmSeconds, ...compare(python, result.segments, result.end) }) };

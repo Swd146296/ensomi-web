@@ -19,16 +19,20 @@ time when the first arrangement missed the star's difficulty target, so their ch
   its `runtime.json`. With the manifest the runtime checks every file's SHA-256. The page shows `models.notices`,
   BeatThis's MIT licence, under its licences.
 - By default `site/app.ts` decodes the song with the package's `decodeAudio`: WebAudio decodes it at 24000 and
-  22050 Hz, and the worker passes both streams to `generateChart`, so the core converts no rate and reads no resampler
+  22050 Hz, and the worker passes both streams to `prepare`, so the core converts no rate and reads no resampler
   table. WebAudio's resampler is not the Python release's, which moves the beat grid by up to 1.3 ms against the
   release charts.
 - With the Exact timing option on, `site/audio.ts` decodes the song again at the file's own sample rate, read from its
-  header, and the worker passes that mono PCM to `generateChart`. The core converts it to BeatThis's 22050 Hz with the
+  header, and the worker passes that mono PCM to `prepare`. The core converts it to BeatThis's 22050 Hz with the
   soxr table for that rate, fetched from `public/resampler/`, and to the rows model's 24000 Hz by linear
   interpolation, as the Python release does. The report gives the drift and the cost both ways
   (`artifacts/browser-test/report.md`).
-- The page generates the whole chart with `generateChart` and plays it afterwards; it does not use the package's
-  streaming API (`prepare`, `Prepared`, `ChartScheduler`).
+- As soon as the model is loaded and a song decoded, the worker runs the song's audio stages with `prepare` (PCM,
+  BeatThis, the features and the beat grid), and again when Exact timing is toggled; nothing else runs until Generate.
+  Generate makes the whole chart from that `Prepared` with `ChartScheduler` in `'whole-chart'` mode, which gives
+  `generateChart`'s chart and `.osu` (`checks/prepare-equal.mjs`), and the page plays it afterwards. Loading,
+  preparing and generating take turns in the worker. A receipt from a `Prepared` times only the stages after timing;
+  the page times the audio stages from `prepare`'s progress and shows them in its times table.
 - Seeds drive the runtime's `mulberry32-u53-v1` generator, not Python's RNG, so a seed does not give the command
   line's chart. As in the app, a blank seed field draws a random seed, which the page shows with the result; 0 is a
   seed like any other.
@@ -43,7 +47,12 @@ npm run typecheck              # the package's index.d.ts against onnxruntime-we
 npm run typecheck:site
 npm run build:site
 node --import tsx checks/ln-gaps.mjs   # writes artifacts/ln-gaps.json
+node checks/prepare-equal.mjs           # writes artifacts/browser-test/prepare-equal.json
 ```
+
+`prepare-equal` generates Catch the Moment and Hesitation Snow from their recorded PCM with `generateChart` and with
+`prepare` then `ChartScheduler` (`'whole-chart'`), as the page does, at seed 1 and at seed 7 with a section, and
+fails unless each pair has the same chart and `.osu`.
 
 `ln-gaps` generates the four release songs from their recorded PCM with seeds 0 to 4, reads the Python release charts,
 and counts long-note tails at or after the next head in their lane, gaps under the inspector's drawn head height per

@@ -2,7 +2,7 @@
  * static text; this picks the messages for the page's `lang`. Notes on controls come from the model and stay English. */
 const en = {
     phases: ['', 'Prepare', 'Timing', 'Rows', 'Arrangement', 'Export'],
-    times: { pcm: 'Prepare PCM', spectrogram: 'BeatThis spectrogram', beatthis: 'BeatThis network', mel: 'Log-Mel features', grid: 'Timing grid', rows: 'Rows model', prior: 'Prior', arrangement: 'R2 arrangement', export: 'Export' } as Record<string, string>,
+    times: { pcm: 'Prepare PCM', timing: 'BeatThis and beat grid', rows: 'Rows model', prior: 'Prior', arrangement: 'R2 arrangement', export: 'Export' } as Record<string, string>,
     wasmThreads: (n: number) => `WebAssembly, ${n} threads`,
     wasmOneThread: 'WebAssembly, one thread',
     workerFailed: 'the generator could not start',
@@ -14,6 +14,7 @@ const en = {
     modelNotLoaded: 'The model is not loaded.',
     loadFailed: (message: string) => `Could not load the model: ${message}`,
     generationFailed: (message: string) => `Generation failed: ${message}`,
+    timingFailed: (message: string) => `Could not find the song's timing: ${message}`,
     decoding: (file: string) => `Decoding ${file}…`,
     decoded: (file: string, length: string, seconds: string) => `${file} · ${length} long · decoded in ${seconds} s`,
     noSong: 'No song loaded.',
@@ -35,6 +36,8 @@ const en = {
     badSeed: 'The seed must be a whole number from 0 to 18446744073709551615, or blank for a new chart.',
     fixSections: 'Fix the sections above.',
     readyToGenerate: 'Ready to generate.',
+    timing: 'Finding the song\'s timing…',
+    timingReady: 'Timing found. Set the conditions and generate.',
     generating: (provider: string) => `Generating on ${provider}…`,
     receipt: { model: 'Model', provider: 'Provider', song: 'Song', star: 'Star', seed: 'Seed', notes: 'Notes', headRows: 'Head rows', tempo: 'Tempo', sections: 'Sections', timing: 'Timing' },
     randomSeed: (seed: string) => `${seed} (drawn at random)`,
@@ -49,7 +52,7 @@ const en = {
 
 const ja: typeof en = {
     phases: ['', '準備', 'タイミング', 'ノーツの位置', '配置', '書き出し'],
-    times: { pcm: 'PCM の準備', spectrogram: 'BeatThis スペクトログラム', beatthis: 'BeatThis ネットワーク', mel: 'Log-Mel 特徴量', grid: 'ビートグリッド', rows: '行モデル', prior: '事前分布', arrangement: 'R2 の配置', export: '書き出し' },
+    times: { pcm: 'PCM の準備', timing: 'BeatThis とビートグリッド', rows: '行モデル', prior: '事前分布', arrangement: 'R2 の配置', export: '書き出し' },
     wasmThreads: n => `WebAssembly（${n} スレッド）`,
     wasmOneThread: 'WebAssembly（1 スレッド）',
     workerFailed: '生成器を起動できませんでした',
@@ -61,6 +64,7 @@ const ja: typeof en = {
     modelNotLoaded: 'モデルは読み込まれていません。',
     loadFailed: message => `モデルを読み込めませんでした：${message}`,
     generationFailed: message => `生成に失敗しました：${message}`,
+    timingFailed: message => `曲のタイミングを解析できませんでした：${message}`,
     decoding: file => `${file} をデコードしています…`,
     decoded: (file, length, seconds) => `${file} · 長さ ${length} · デコード ${seconds} 秒`,
     noSong: '曲が読み込まれていません。',
@@ -82,6 +86,8 @@ const ja: typeof en = {
     badSeed: 'シードは 0〜18446744073709551615 の整数で入力してください。空欄なら毎回新しい譜面になります。',
     fixSections: '上の区間を直してください。',
     readyToGenerate: '生成できます。',
+    timing: '曲のタイミングを解析しています…',
+    timingReady: 'タイミングの解析が終わりました。条件を設定して生成してください。',
     generating: provider => `${provider} で生成しています…`,
     receipt: { model: 'モデル', provider: '実行環境', song: '曲', star: '★', seed: 'シード', notes: 'ノーツ', headRows: 'ノーツのある行', tempo: 'テンポ', sections: '区間', timing: 'タイミング' },
     randomSeed: seed => `${seed}（ランダム）`,
@@ -96,7 +102,7 @@ const ja: typeof en = {
 
 const zh: typeof en = {
     phases: ['', '准备', '时间轴', '音符位置', '配置', '导出'],
-    times: { pcm: '准备 PCM', spectrogram: 'BeatThis 频谱图', beatthis: 'BeatThis 网络', mel: 'Log-Mel 特征', grid: '节拍网格', rows: '行模型', prior: '先验', arrangement: 'R2 配置', export: '导出' },
+    times: { pcm: '准备 PCM', timing: 'BeatThis 与节拍网格', rows: '行模型', prior: '先验', arrangement: 'R2 配置', export: '导出' },
     wasmThreads: n => `WebAssembly（${n} 个线程）`,
     wasmOneThread: 'WebAssembly（单线程）',
     workerFailed: '生成器无法启动',
@@ -108,6 +114,7 @@ const zh: typeof en = {
     modelNotLoaded: '模型未加载。',
     loadFailed: message => `无法加载模型：${message}`,
     generationFailed: message => `生成失败：${message}`,
+    timingFailed: message => `无法分析歌曲的时间轴：${message}`,
     decoding: file => `正在解码 ${file}…`,
     decoded: (file, length, seconds) => `${file} · 时长 ${length} · 解码用时 ${seconds} 秒`,
     noSong: '未加载歌曲。',
@@ -129,6 +136,8 @@ const zh: typeof en = {
     badSeed: '种子必须是 0 到 18446744073709551615 之间的整数；留空则每次生成新谱面。',
     fixSections: '请修正上面的分段。',
     readyToGenerate: '可以生成了。',
+    timing: '正在分析歌曲的时间轴…',
+    timingReady: '时间轴已分析完毕。设置条件后即可生成。',
     generating: provider => `正在用 ${provider} 生成…`,
     receipt: { model: '模型', provider: '运行环境', song: '歌曲', star: '星数', seed: '种子', notes: '音符', headRows: '音符行', tempo: '速度', sections: '分段', timing: '时间轴' },
     randomSeed: seed => `${seed}（随机）`,

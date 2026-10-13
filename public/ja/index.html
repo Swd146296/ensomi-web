@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ensomi（えんそみ）: 聴く音楽から、参加する音楽へ</title>
+<meta name="description" content="ensomi は、聴く音楽を遊べる音楽に変えます。誰でも遊べる最初のリリース R2 を試してみてください。曲を選ぶと、ブラウザの中で osu!mania 4K の譜面ができます。次につくっているものもご覧ください。">
+<meta name="theme-color" content="#1c1525">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:title" content="ensomi（えんそみ）: 聴く音楽から、参加する音楽へ">
+<meta property="og:description" content="曲を選ぶと、遊べる osu!mania 4K の譜面がブラウザの中でできあがります。誰でも遊べる最初のリリースと、次につくっているもの。">
+<meta property="og:image" content="https://ensomi.app/img/icon.webp">
+<meta property="og:url" content="https://ensomi.app/ja/">
+<link rel="alternate" hreflang="en" href="https://ensomi.app/">
+<link rel="alternate" hreflang="ja" href="https://ensomi.app/ja/">
+<link rel="alternate" hreflang="zh-CN" href="https://ensomi.app/zh/">
+<link rel="alternate" hreflang="x-default" href="https://ensomi.app/">
+<link rel="stylesheet" href="/styles.css">
+<script type="module" src="/app.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">本文へ移動</a>
+<div class="hero-band">
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="/ja/"><img src="/mark.png" width="36" height="36" alt="">ensomi</a>
+      <nav class="sections" aria-label="セクション">
+        <a href="#generate" class="desktop-only">生成</a>
+        <a href="#r2">R2</a>
+        <a href="#aim">ビジョン</a>
+        <a href="#r3">R3</a>
+        <a href="#run">自分で動かす</a>
+        <a href="#licences">ライセンス</a>
+      </nav>
+      <div class="top-end">
+        <nav class="langs" aria-label="言語">
+          <a href="/" hreflang="en" lang="en">English</a>
+          <a href="/ja/" hreflang="ja" lang="ja" aria-current="page">日本語</a>
+          <a href="/zh/" hreflang="zh-CN" lang="zh-CN">中文</a>
+        </nav>
+        <a class="icon-link hf" href="https://huggingface.co/sed-i/ensomi-r2" aria-label="Hugging Face のモデル" title="Hugging Face"></a>
+        <a class="icon-link gh" href="https://github.com/ensomi-labs" aria-label="GitHub の ensomi-labs" title="GitHub"></a>
+      </div>
+    </header>
+    <div class="hero">
+      <img class="hero-icon" src="/img/icon.webp" width="576" height="576" alt="">
+      <p class="eyebrow">R2 · 誰でも遊べる最初のリリース</p>
+      <h1 lang="en"><span class="name">ensomi</span> — Play the music around you.</h1>
+      <p class="jp" lang="ja">えんそみ — 聴く音楽から、参加する音楽へ。</p>
+      <p class="lede">好きな曲を選ぶと、R2 がこのブラウザの中で譜面を作ります。音楽に合わせて譜面が流れるのを見てから、osu! に取り込んで自分で遊んでみてください。曲がパソコンの外に送られることはありません。</p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <main id="main">
+    <p class="desktop-note">譜面の生成にはパソコンのブラウザが必要です。モデルを読み込み、曲を選んで譜面を生成するには、このページをパソコンで開いてください。</p>
+    <section id="generate" class="tool" aria-labelledby="generate-title">
+      <h2 id="generate-title" class="visually-hidden">譜面を生成</h2>
+      <div class="tool-row">
+        <div class="panel">
+          <h3><span class="step-num">1</span>モデル</h3>
+          <fieldset class="choice">
+            <legend class="visually-hidden">モデルの取得元</legend>
+            <label><input type="radio" name="source" value="hub" checked> Hugging Face から</label>
+            <label><input type="radio" name="source" value="folder"> ダウンロード済みのフォルダから</label>
+          </fieldset>
+          <label id="folder-field" hidden>モデルのフォルダ（<code>ensomi-r2</code> またはその中の <code>onnx</code> フォルダ）
+            <input type="file" id="folder" webkitdirectory multiple></label>
+          <div><button class="btn primary" id="load" type="button">モデルを読み込む</button></div>
+          <div class="meter" id="model-meter" hidden><span></span></div>
+          <p class="status" id="model-status">初回は <a href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0/onnx"><code>sed-i/ensomi-r2</code></a> から約 120 MB をダウンロードし、2 回目以降はこのブラウザのキャッシュから読み込みます。ブラウザが対応していればビート検出に WebGPU を使い、それ以外は WebAssembly のスレッドで処理します。モデルがキャッシュ済みの状態で、3 分 20 秒の曲が Apple M5 の Chrome で約 6 秒、WebGPU なしで約 13 秒でした。</p>
+        </div>
+        <div class="panel">
+          <h3><span class="step-num">2</span>曲</h3>
+          <label>音声ファイル <input type="file" id="song" accept="audio/*,.mp3,.ogg,.wav,.flac,.m4a"></label>
+          <p class="status" id="song-status">このブラウザでデコードできる形式なら何でも使えます。ファイルはパソコンの外に送られません。</p>
+          <div class="pair">
+            <label>タイトル <input type="text" id="title" autocomplete="off"></label>
+            <label>アーティスト <input type="text" id="artist" autocomplete="off"></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="conditions">
+        <h3><span class="step-num">3</span>条件</h3>
+        <div class="pair">
+          <div class="star">
+            <label><span class="star-label">★（難易度） <output id="star-value">3.5</output></span>
+              <input type="range" id="star" min="2" max="5.9" step="0.1" value="3.5" aria-describedby="star-note"></label>
+            <p class="small muted" id="star-note">生成された譜面は、指定した★より易しくも難しくもなることがあります。難易度のコントロールは今後改善していきます。</p>
+          </div>
+          <label>シード · 空欄なら毎回新しい譜面
+            <span class="seed-row"><input type="text" id="seed" inputmode="numeric" placeholder="ランダム" spellcheck="false"><button type="button" class="btn small" id="new-seed">新しいシード</button></span></label>
+        </div>
+        <div class="exact">
+          <label><input type="checkbox" id="exact" aria-describedby="exact-note"> 厳密なタイミング</label>
+          <p class="small muted" id="exact-note">曲を元のサンプルレートでデコードし、Python 版と同じ方法で変換します。ビートの時刻が Python 版と数千分の 1 ミリ秒以内で一致します（オフのときは最大約 1.3 ms ずれます）。1 曲あたり約 0.5 秒余分にかかり、サンプルレートの高いファイルではさらにかかります（96 kHz で約 1.3 秒）。</p>
+        </div>
+        <div class="sections">
+          <h4>区間 <span class="muted small">任意</span></h4>
+          <p class="small muted">曲の一部の範囲に、スタイルや目標の★を指定できます。時刻は mm:ss で入力します。各区間は 8〜32 秒で、曲の範囲内に収め、ほかの区間と重ねないでください。ある区間の終わりから次の区間を始めることはできます。</p>
+          <div id="section-list"></div>
+          <button type="button" class="btn small" id="add-section" disabled>区間を追加</button>
+          <p class="invalid" id="section-error" hidden></p>
+        </div>
+      </div>
+
+      <div class="run">
+        <button class="btn primary big" id="generate-button" type="button" disabled>譜面を生成</button>
+        <ol class="phases" id="phases" aria-label="進行状況">
+          <li data-phase="1">準備</li>
+          <li data-phase="2">タイミング</li>
+          <li data-phase="3">ノーツの位置</li>
+          <li data-phase="4">配置</li>
+          <li data-phase="5">書き出し</li>
+        </ol>
+        <p class="status" id="run-status" aria-live="polite">モデルを読み込んで曲を選ぶと、生成を始められます。</p>
+      </div>
+      <p class="error" id="error" role="alert" hidden></p>
+    </section>
+
+    <section id="result" aria-labelledby="result-title" hidden>
+      <h2 id="result-title">あなたの譜面</h2>
+      <div class="inspector">
+        <div class="viewport">
+          <canvas id="lanes" tabindex="0" aria-label="譜面ビュー：4 本のレーンを判定ラインに向かってノーツが流れます。クリックで移動、ドラッグで少しずつ移動、ホイールか ↑ ↓ キーでスクロールします。"></canvas>
+          <p class="instrument"><span id="identity"></span><span id="clock">0:00.000</span></p>
+        </div>
+        <canvas id="overview" class="overview" aria-label="曲全体の概観。下から上へ、ノーツの密度とともに表示します。クリックかドラッグで移動します。"></canvas>
+        <div class="side">
+          <fieldset class="transport">
+            <legend class="visually-hidden">再生</legend>
+            <button class="btn primary" id="play" type="button" aria-pressed="false" aria-keyshortcuts="Space">再生</button>
+            <button class="btn" id="restart" type="button">最初から</button>
+          </fieldset>
+          <div class="tuning">
+            <div class="preset-row"><span>再生速度</span><div class="presets" id="rates" role="group" aria-label="再生速度"></div></div>
+            <div class="preset-row"><label for="volume">音量</label><span class="volume"><input type="range" id="volume" min="0" max="100" step="5" value="80"><output id="volume-value" for="volume"></output></span></div>
+            <div class="preset-row"><span>スクロール速度（px/秒）</span><div class="presets" id="speeds" role="group" aria-label="スクロール速度（ピクセル/秒）"></div></div>
+          </div>
+          <p class="small muted">スペースキーで再生・一時停止、← → で 5 秒移動します。レーン上ではクリックで移動、ドラッグで少しずつ移動、ホイールか ↑ ↓ でスクロールできます。ローズ色が通常ノーツ、ラベンダー色がロングノーツ、紫の帯が指定した区間です。</p>
+          <div class="downloads">
+            <a class="btn primary" id="get-osz" download>.osz をダウンロード</a>
+            <a class="btn" id="get-osu" download>.osu をダウンロード</a>
+          </div>
+          <dl class="receipt" id="receipt"></dl>
+          <details class="timing">
+            <summary id="times-total">生成時間</summary>
+            <table class="times" id="times" aria-label="段階ごとの時間"></table>
+          </details>
+        </div>
+      </div>
+      <audio id="audio" preload="auto"></audio>
+    </section>
+
+    <section id="why">
+      <h2>ensomi をつくる理由</h2>
+      <div class="prose">
+        <p>音楽はたいてい、聴くものです。リズムゲームなら、曲の中に入り込めます。手がビートを追いかけ、聴くことが遊ぶことに変わります。けれど、曲が遊べるようになるのは、誰かが一つひとつ手で譜面を作ってから。身の回りの音楽のほとんどには、譜面がありません。</p>
+        <p>それを変えたいと考えています。ensomi はマッパーが作った譜面から学び、音声から新しい譜面を書きます。好きな音楽も、すでに身の回りに流れている音楽も、遊べるものにするために。</p>
+      </div>
+    </section>
+
+    <section id="r2">
+      <h2>R2：曲から、遊べる譜面へ</h2>
+      <p class="prose">R2 は、誰でも遊べる私たちの最初のリリースです。音声だけをもとに動き、曲が譜面になるまでに三つのことが起きます。</p>
+      <ol class="steps">
+        <li><b>ビートを見つける。</b><span>R2 はビートを聴き取り、テンポの区間ごとに、曲の音が鳴り始める位置へ合わせます。</span></li>
+        <li><b>ノーツの位置を決める。</b><span>聴こえた音をもとに、一拍ごとにノーツの始まる位置を決めます。</span></li>
+        <li><b>譜面を配置する。</b><span>ノーツの置かれ方が似ている人間の譜面から、ロングノーツや同時押しの多さといったキャラクターを受け取り、レーン・通常ノーツ・ロングノーツを配置します。この段階ではまだ音声を聴いていません。</span></li>
+      </ol>
+      <p class="prose" style="margin-top: var(--s4)">できあがるのは、ブラウザの中で作られた完全な osu!mania 4K 譜面です。音楽に合わせて流れを確認でき、そのまま osu! で開けます。</p>
+      <div class="actions">
+        <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0">Hugging Face のモデル</a>
+        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/main/docs/research/r2_system.md">レポートを読む（英語）</a>
+        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/tree/r2-1.0">コード</a>
+      </div>
+    </section>
+
+    <section id="aim">
+      <h2>私たちがつくっているもの</h2>
+      <p class="prose">音楽を聴くこと、遊ぶこと、譜面を作ること。それらをひとつの体験にしたいと考えています。四つの場面で、その意味をお見せします。</p>
+      <div class="cols">
+        <div>
+          <p class="eyebrow">まわりの音楽で遊ぶ</p>
+          <h3>身の回りの音楽が、遊べるものになる。</h3>
+          <p>近くで曲がすでに流れています。ensomi はその曲を認識して再生位置を見つけ、リアルタイムで生成した譜面を始めます。譜面は音楽を止めることなく、音楽についていきます。</p>
+        </div>
+        <div>
+          <p class="eyebrow">譜面制作</p>
+          <h3>配置を決めるのはあなた。ensomi は候補を出します。</h3>
+          <p>マッパーが一つのパッセージを選び、配置の候補を求めます。譜面のほかの部分はそのままです。候補を見比べて、残す、やり直す、元に戻す。選択も表現も、マッパーのものです。</p>
+        </div>
+        <div>
+          <p class="eyebrow">練習</p>
+          <h3>好きな音楽で練習する。</h3>
+          <p>プレイヤーが好きな曲と上達したい動きを選ぶと、その動きを軸に譜面ができあがります。</p>
+        </div>
+        <div>
+          <p class="eyebrow">一緒に遊ぶ</p>
+          <h3>あなたのいいプレイが、相手の譜面に降ってくる。</h3>
+          <p>対戦テトリスでラインを消すように、きれいに叩けたパッセージや長いコンボが攻撃になります。ノーツの連打や難しいパターンが、相手がこれから叩く譜面に落ちてきます。協力プレイでは息を合わせ、一人のプレイがもう一人の譜面を形づくります。</p>
+        </div>
+      </div>
+      <p class="prose" style="margin-top: var(--s4)">まだそこまでは来ていません。どの場面にも、指定した難易度で遊べて、音楽に沿い、曲全体でひとつのキャラクターを保ち、頼んだことに応える譜面が必要です。R2 はその最初の一歩です。待っている間に曲全体の譜面ができ、曲の一部にスタイルを指定することもすでにできます。ただし、音楽とリアルタイムで一緒に流れる譜面、プレイ中に変わる譜面、既存の譜面の一部の作り直しには、まだ対応していません。</p>
+    </section>
+
+    <section id="r3">
+      <h2>次は R3</h2>
+      <p class="prose">R2 は誰でも遊べる最初のリリースであり、ここからが始まりです。</p>
+      <p class="prose">いま、次のシステム R3 を開発しています。R2 と同じく、タイミング、ヘッド行（ノーツの置かれる位置）、配置（ノーツの並べ方）のすべてを扱います。R2 から学んだことに、次の順で取り組みます。</p>
+      <ol class="aims">
+        <li>
+          <h3>音に乗るノーツ</h3>
+          <p>ノーツは、聴こえる音の上に置かれるべきです。実際の音声により正確に合うヘッド行に取り組んでいます。</p>
+        </li>
+        <li>
+          <h3>音を聴く配置</h3>
+          <p>R2 の配置は音声を聴いていません。音ではなくノーツの位置をもとにノーツを並べるため、それが音楽に沿わないロングノーツとして表れます。R3 では配置モデルに音楽の情報を取り入れ、配置も音を聴くようにします。</p>
+        </li>
+        <li>
+          <h3>見えない補正を減らす</h3>
+          <p>R2 には、書いている途中で譜面を安定させるいくつかの補正ルールがあります。たとえば、与えられたキャラクターへ譜面を引き戻す復元力です。それらが特定の譜面をゆがめていないか、見直しています。</p>
+        </li>
+        <li>
+          <h3>信頼できる難易度</h3>
+          <p>★を指定したら、譜面はそれに合っているべきです。いまは指定より易しく、あるいは難しくなることがあります。難易度のコントロールを改善しており、それを正しくするには、システムの多くを作り直すことになるかもしれません。</p>
+        </li>
+      </ol>
+      <p class="prose muted" style="margin-top: var(--s4)">これらは目標であり、作業は進行中です。R2 と同じく、R3 にできることは、確かめてから初めてお伝えします。</p>
+    </section>
+
+    <section id="run">
+      <h2>自分で動かす</h2>
+      <p class="prose">上の生成器は <code>@ensomi/runtime</code> を使って R2 をブラウザで動かしています。ニューラルネットワークは ONNX Runtime Web で、それ以外は WebAssembly にコンパイルした ensomi の Rust ランタイムで動きます。曲のデコードと乱数はブラウザ側で行うため、ここでのシードとコマンドラインでの同じシードからは、同じ譜面にはなりません。</p>
+      <p class="prose">コマンドラインでリリース版を動かすには（Apple シリコン搭載の macOS で確認済み。Linux と CUDA では実行していません）：</p>
+<pre><code>git clone https://github.com/ensomi-labs/ensomi-model.git
+cd ensomi-model
+git checkout --detach r2-1.0
+uv sync --python 3.10 --extra mps
+hf download sed-i/ensomi-r2 --revision r2-1.0 --local-dir artifacts/hf-r2
+
+uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
+  --model-dir artifacts/hf-r2 --audio /path/to/song.mp3 --star 3.5 \
+  --title "Song title" --artist "Artist" --seed 0 --out artifacts/my-chart.osz</code></pre>
+      <p class="prose small muted">初回の実行では、BeatThis のチェックポイント（81 MB）も作者の配布元からダウンロードします。WAV 以外の音声のデコードには ffmpeg が必要です。<code>--help</code> で指定できる項目がすべて表示されます。詳しい手順は <a href="https://huggingface.co/sed-i/ensomi-r2">Hugging Face のモデルカード</a>（英語）にあります。</p>
+    </section>
+
+    <section id="licences">
+      <h2>ライセンス</h2>
+      <div class="prose">
+        <p>モデルファイルと Hugging Face リポジトリのその他の内容は <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> です。クレジットを表示すれば非営利の範囲で利用・共有・改変でき、改変したものは同じライセンスで共有する必要があります。例外は BeatThis（CPJKU）で、その ONNX エクスポート（<code>onnx/beatthis.onnx</code>）とフロントエンドの配列（<code>onnx/beatthis-mel-filter.bin</code>、<code>onnx/beatthis-hann-window.bin</code>）は BeatThis の <a href="https://huggingface.co/sed-i/ensomi-r2/blob/r2-1.0/onnx/BeatThis-LICENSE.txt">MIT ライセンス</a>のままです。モデルのコードは AGPL-3.0-only、ブラウザ用ランタイムは Apache-2.0、ブラウザでニューラルネットワークを動かす ONNX Runtime Web は MIT、このサイトは MIT です。正式な条件は各ライセンスの本文に従います。</p>
+        <div id="notices" hidden>
+          <p>読み込んだモデルに含まれていたライセンス表記：</p>
+          <div id="notice-list"></div>
+        </div>
+        <p>R2 と行モデルは、osu! の Ranked と Loved の 4K 譜面（★2〜6）で学習しました。それらの譜面や音声は配布していません。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>ensomi R2、リリース <code>r2-1.0</code>。<a href="https://huggingface.co/sed-i/ensomi-r2">モデル</a> · <a href="https://github.com/ensomi-labs/ensomi-model">コード</a> · <a href="https://github.com/ensomi-labs">ensomi-labs</a></p>
+    <p>このページの R2 に関する記述は R2 レポートに基づいており、それを超えることは主張しません。R3 は開発中です。</p>
+  </footer>
+</div>
+</body>
+</html>

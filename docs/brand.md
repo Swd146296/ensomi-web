@@ -8,6 +8,7 @@ ensomi turns music from something you listen to into something you take part in.
 - A coined name from 演奏 (*ensō*, performance), with 円相 (*ensō*, an open circular gesture) as a secondary association.
 - Statement: **ensomi — Play the music around you.**
 - 日本語: **えんそみ — 聴く音楽から、参加する音楽へ。**
+- The statement and its Japanese line appear unchanged on every language's page, the English line included.
 
 Release and model names keep their own form where they are data, for example the runtime's `model_name` "Ensomi R2"; page copy says "R2" or "ensomi R2".
 

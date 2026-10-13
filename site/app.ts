@@ -91,7 +91,7 @@ function onFile(data: { path: string; loaded: number; size: number; cached: bool
         : `Downloading the model: ${mb(loaded)} of ${mb(size)} MB`;
 }
 
-function onLoaded(data: { capabilities: ModelCapabilities; provider: string; threads: number; seconds: number }) {
+function onLoaded(data: { capabilities: ModelCapabilities; notices: { path: string; text: string }[]; provider: string; threads: number; seconds: number }) {
     caps = data.capabilities;
     provider = data.provider;
     threads = data.threads;
@@ -102,8 +102,21 @@ function onLoaded(data: { capabilities: ModelCapabilities; provider: string; thr
     const star = field('star');
     star.min = String(caps.min_star);
     star.max = String(Math.round((caps.max_star_exclusive - 0.1) * 10) / 10);
+    showNotices(data.notices);
     renderSections();
     update();
+}
+
+/** The licence notices that came with the model, BeatThis's MIT licence, under the page's licences. */
+function showNotices(notices: { path: string; text: string }[]) {
+    $('notice-list').replaceChildren(...notices.flatMap(({ path, text }) => {
+        const name = document.createElement('p'), code = document.createElement('code'), pre = document.createElement('pre');
+        code.textContent = path;
+        name.append(code);
+        pre.textContent = text;
+        return [name, pre];
+    }));
+    $('notices').hidden = !notices.length;
 }
 
 function onError(data: { during: string; message: string }) {
@@ -155,16 +168,14 @@ $('new-seed').addEventListener('click', () => {
     update();
 });
 
-/** A random seed for a seed of 0. Never 0 itself, so that the seed shown with the result reproduces the chart. The core
- * seeds its generators from the low 32 bits. */
-function randomSeed() {
-    let seed = 0;
-    while (!seed) seed = crypto.getRandomValues(new Uint32Array(1))[0];
-    return seed;
-}
+/** A random seed for a blank seed field, shown with the result so that it reproduces the chart. The core seeds its
+ * generators from the low 32 bits. */
+const randomSeed = () => crypto.getRandomValues(new Uint32Array(1))[0];
 
-function seedValue(): number | bigint | undefined {
+/** The seed entered, 'random' for a blank field, or undefined for text that is not a seed. */
+function seedValue(): number | bigint | 'random' | undefined {
     const text = field('seed').value.trim();
+    if (!text) return 'random';
     if (!/^\d{1,20}$/.test(text) || BigInt(text) > 0xffffffffffffffffn) return undefined;
     const n = BigInt(text);
     return n <= BigInt(Number.MAX_SAFE_INTEGER) ? Number(n) : n;
@@ -242,7 +253,7 @@ function update() {
     const blocker = !caps ? (loading ? 'Loading the model…' : 'Load the model to start.')
         : !song ? 'Choose a song.'
             : song.durationMs < 3000 ? 'The song must be at least 3 seconds long.'
-                : seedValue() === undefined ? 'The seed must be a whole number from 0 to 18446744073709551615.'
+                : seedValue() === undefined ? 'The seed must be a whole number from 0 to 18446744073709551615, or blank for a new chart.'
                     : sectionError ? 'Fix the sections above.' : '';
     $<HTMLButtonElement>('generate-button').disabled = generating || Boolean(blocker);
     $<HTMLButtonElement>('add-section').disabled = generating || !caps || !song || !sectionOptions().length;
@@ -256,9 +267,9 @@ $('generate-button').addEventListener('click', async () => {
     const requests = sectionRequests(), entered = seedValue();
     if (typeof requests === 'string' || entered === undefined) return;
     clearError();
-    // A seed of 0 draws a new seed for each generation; the result shows the seed used.
-    const title = field('title').value.trim() || song.file.name.replace(/\.[^.]+$/, ''), artist = field('artist').value.trim(), seed = entered === 0 ? randomSeed() : entered;
-    job = { song, title, artist, seed, random: entered === 0, star: Number(field('star').value), sections: requests };
+    // A blank seed draws a new seed for each generation, as in the app; the result shows the seed used.
+    const title = field('title').value.trim() || song.file.name.replace(/\.[^.]+$/, ''), artist = field('artist').value.trim(), seed = entered === 'random' ? randomSeed() : entered;
+    job = { song, title, artist, seed, random: entered === 'random', star: Number(field('star').value), sections: requests };
     generating = true;
     phase = { current: 0, started: performance.now(), seconds: [] };
     renderPhases();

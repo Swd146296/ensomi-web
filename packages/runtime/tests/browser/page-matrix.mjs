@@ -81,10 +81,10 @@ try{
   await page.locator('#conditions').screenshot({path:join(out,`screenshots/${backend}-invalid-section.png`)});
   await page.locator('.end').fill('00:40');await page.locator('.kind').selectOption('jumpstream');await page.locator('.value').fill('0.7');
   await generate(songs[3],false,true);await page.locator('.remove').click();
-  // Seed 0 draws a nonzero seed for each generation and shows it with the result; entering that seed gives the same chart.
-  const random=await generate(songs[0],false,false,'0','-seed0'),repeat=await generate(songs[0],false,false,String(random.seed),'-seed0-repeat');
+  // A blank seed draws a seed for each generation and shows it with the result; entering that seed gives the same chart.
+  const random=await generate(songs[0],false,false,'','-blank-seed'),repeat=await generate(songs[0],false,false,String(random.seed),'-blank-seed-repeat');
   report.randomSeed={seed:random.seed,shown:random.seedShown,fieldAfter:random.seedField,reproduced:Boolean(random.chartSha256)&&random.chartSha256===repeat.chartSha256};
-  if(!random.seed||!random.seedShown?.startsWith(String(random.seed))||random.seedField!=='0'||!report.randomSeed.reproduced)process.exitCode=1;
+  if(random.seed===undefined||!random.seedShown?.startsWith(String(random.seed))||random.seedField!==''||!report.randomSeed.reproduced)process.exitCode=1;
  }
  if(source!=='folder'){await load(true);for(const song of songs.slice(0,2))await generate(song,true);}
  if(process.env.ENSOMI_PLAYER==='1') { report.player=await playerChecks(page,out); await writeFile(join(out,'player.json'),JSON.stringify(report.player,null,2)); if(!report.player.volume.pass)process.exitCode=1; }

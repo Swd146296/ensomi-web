@@ -89,10 +89,10 @@ code { background: var(--surface-2); padding: 0.1em 0.4em; border-radius: 6px; }
 .top nav { display: flex; flex-wrap: wrap; gap: var(--s1) var(--s4); font-size: var(--step--1); }
 .top nav a { color: var(--muted); text-decoration: none; padding: var(--s1) 0; }
 .top nav a:hover { color: var(--text); text-decoration: underline; }
-.top .sections { margin-left: auto; }
-.top-end { display: flex; align-items: center; gap: var(--s2); padding-left: var(--s4); border-left: 1px solid var(--line); }
-.top .langs { gap: var(--s1) var(--s3); margin-right: var(--s2); }
+.top .page-nav { margin-left: auto; }
+.top .langs { gap: var(--s1) var(--s3); padding-left: var(--s4); border-left: 1px solid var(--line); }
 .top .langs a[aria-current="page"] { color: var(--text); font-weight: 650; }
+.top .icons { display: flex; gap: var(--s1); }
 .icon-link { display: inline-grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 50%; color: var(--muted); }
 .icon-link:hover { color: var(--text); background: var(--surface); }
 .icon-link::before { content: ""; width: 1.3rem; height: 1.3rem; background: currentColor; mask: var(--icon) center / contain no-repeat; }
@@ -249,8 +249,10 @@ footer p { margin-bottom: var(--s2); }
   .desktop-note { display: block; margin-top: var(--s4); background: var(--surface); border-radius: var(--radius-soft); padding: var(--s3) var(--s4); color: var(--muted); }
   .wrap { padding: 0 var(--s3); }
   .top { flex-wrap: wrap; }
-  .top-end { margin-left: auto; padding-left: 0; border-left: 0; }
-  .top .sections { order: 3; width: 100%; margin-left: 0; }
+  /* the brand and the two icons share the first row; the sections and the languages follow */
+  .top .icons { order: 1; margin-left: auto; }
+  .top .page-nav { order: 2; margin-left: 0; }
+  .top .langs { order: 3; margin-left: auto; padding-left: 0; border-left: 0; }
   .hero h1 { font-size: clamp(2.1rem, 1.2rem + 4.5vw, 3.4rem); }
   .hero-icon { display: none; }
   section { padding-top: var(--s5); }

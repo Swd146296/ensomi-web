@@ -80,8 +80,8 @@
               <input type="range" id="star" min="2" max="5.9" step="0.1" value="3.5" aria-describedby="star-note"></label>
             <p class="small muted" id="star-note">A generated chart can come out easier or harder than the rating asked for; difficulty control will be refined.</p>
           </div>
-          <label>Seed · 0 draws a new one for each chart
-            <span class="seed-row"><input type="text" id="seed" inputmode="numeric" value="0" spellcheck="false"><button type="button" class="btn small" id="new-seed">New seed</button></span></label>
+          <label>Seed · blank for a new chart each time
+            <span class="seed-row"><input type="text" id="seed" inputmode="numeric" placeholder="Random" spellcheck="false"><button type="button" class="btn small" id="new-seed">New seed</button></span></label>
         </div>
         <div class="exact">
           <label><input type="checkbox" id="exact" aria-describedby="exact-note"> Exact timing</label>
@@ -163,7 +163,7 @@
       <p class="prose" style="margin-top: var(--s4)">What comes out is a complete osu!mania 4K chart, made in your browser, that you can watch against the music and open in osu!.</p>
       <div class="actions">
         <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0">Model on Hugging Face</a>
-        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/r2-1.0/docs/research/r2_system.md">Read the report</a>
+        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/main/docs/research/r2_system.md">Read the report</a>
         <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/tree/r2-1.0">Code</a>
       </div>
     </section>
@@ -229,7 +229,7 @@
 cd ensomi-model
 git checkout --detach r2-1.0
 uv sync --python 3.10 --extra mps
-hf download sed-i/ensomi-r2 --local-dir artifacts/hf-r2
+hf download sed-i/ensomi-r2 --revision r2-1.0 --local-dir artifacts/hf-r2
 
 uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
   --model-dir artifacts/hf-r2 --audio /path/to/song.mp3 --star 3.5 \
@@ -240,7 +240,11 @@ uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
     <section id="licences">
       <h2>Licences</h2>
       <div class="prose">
-        <p>The model files and the rest of the Hugging Face repository are <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>: use, share and adapt them with credit, not commercially, and share adaptations under the same licence. The exception is BeatThis (CPJKU): its ONNX export (<code>onnx/beatthis.onnx</code>) and front-end arrays (<code>onnx/beatthis-mel-filter.bin</code>, <code>onnx/beatthis-hann-window.bin</code>) keep BeatThis's <a href="https://huggingface.co/sed-i/ensomi-r2/blob/r2-1.0/onnx/BeatThis-LICENSE.txt">MIT licence</a>. The model code is AGPL-3.0-only, the browser runtime is Apache-2.0, and this site is MIT.</p>
+        <p>The model files and the rest of the Hugging Face repository are <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>: use, share and adapt them with credit, not commercially, and share adaptations under the same licence. The exception is BeatThis (CPJKU): its ONNX export (<code>onnx/beatthis.onnx</code>) and front-end arrays (<code>onnx/beatthis-mel-filter.bin</code>, <code>onnx/beatthis-hann-window.bin</code>) keep BeatThis's <a href="https://huggingface.co/sed-i/ensomi-r2/blob/r2-1.0/onnx/BeatThis-LICENSE.txt">MIT licence</a>. The model code is AGPL-3.0-only, the browser runtime is Apache-2.0, ONNX Runtime Web, which runs the networks in your browser, is MIT, and this site is MIT.</p>
+        <div id="notices" hidden>
+          <p>The licence notices that came with the model you loaded:</p>
+          <div id="notice-list"></div>
+        </div>
         <p>R2 and the rows model were trained on osu!'s ranked and loved 4K charts from 2 to 6 stars. We do not distribute those charts or their audio.</p>
       </div>
     </section>

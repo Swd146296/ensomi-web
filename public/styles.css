@@ -219,6 +219,7 @@ output { color: var(--text); font-variant-numeric: tabular-nums; }
 /* code */
 pre { background: var(--stage); color: #ece6f4; border: 1px solid var(--stage-line); border-radius: var(--radius); padding: var(--s3); overflow-x: auto; line-height: 1.55; margin: var(--s3) 0; max-width: 100%; }
 pre code { background: none; padding: 0; }
+#notice-list pre { white-space: pre-wrap; }
 
 footer { margin-top: var(--s6); border-top: 1px solid var(--line); padding: var(--s4) 0 var(--s5); color: var(--muted); font-size: var(--step--1); }
 footer p { margin-bottom: var(--s2); }

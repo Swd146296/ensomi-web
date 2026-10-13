@@ -1,8 +1,8 @@
 # Runtime checks
 
-The page generates with [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) 0.2.0 from npm, the
+The page generates with [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) 0.3.0 from npm, the
 WebAssembly build of Ensomi's shared Rust runtime ([ensomi-labs/runtime](https://github.com/ensomi-labs/runtime),
-tag `v0.2.0`) and its JavaScript API over ONNX Runtime Web. The repository root's `package.json` pins it exactly; the
+tag `v0.3.0`) and its JavaScript API over ONNX Runtime Web. The repository root's `package.json` pins it exactly; the
 package's README documents the API. This directory holds the checks of that runtime in this site, the browser tests
 and their results. Apache-2.0.
 
@@ -14,7 +14,10 @@ time when the first arrangement missed the star's difficulty target, so their ch
 
 - `site/worker.ts` calls `loadModels` with the core copied to `public/ensomi-runtime.wasm` and the package's soxr
   resampler tables copied to `public/resampler/` (both by `npm run build:site`), since bundling moves the module away
-  from the package's own files.
+  from the package's own files. The model's files come through the Cache API (`cachedSource`), which rejects an
+  HTTP 404 with `code` `'ENOENT'` as the package's own sources do, so a model without `ensomi-package.json` loads from
+  its `runtime.json`. With the manifest the runtime checks every file's SHA-256. The page shows `models.notices`,
+  BeatThis's MIT licence, under its licences.
 - By default `site/app.ts` decodes the song with the package's `decodeAudio`: WebAudio decodes it at 24000 and
   22050 Hz, and the worker passes both streams to `generateChart`, so the core converts no rate and reads no resampler
   table. WebAudio's resampler is not the Python release's, which moves the beat grid by up to 1.3 ms against the
@@ -27,7 +30,8 @@ time when the first arrangement missed the star's difficulty target, so their ch
 - The page generates the whole chart with `generateChart` and plays it afterwards; it does not use the package's
   streaming API (`prepare`, `Prepared`, `ChartScheduler`).
 - Seeds drive the runtime's `mulberry32-u53-v1` generator, not Python's RNG, so a seed does not give the command
-  line's chart. The page draws a random seed for seed 0 and shows the seed used.
+  line's chart. As in the app, a blank seed field draws a random seed, which the page shows with the result; 0 is a
+  seed like any other.
 
 ## Checks
 

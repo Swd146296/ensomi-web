@@ -24,6 +24,10 @@ function cachedSource(base: string): FileSource {
             return bytes;
         }
         const response = await fetch(url);
+        // A missing file rejects with code 'ENOENT', as the runtime's own sources do: a model without
+        // ensomi-package.json then loads from its runtime.json.
+        if (response.status === 404)
+            throw Object.assign(new Error(`Missing model file: ${path}`), { code: 'ENOENT' });
         if (!response.ok || !response.body)
             throw new Error(`Model download failed: ${path} (HTTP ${response.status})`);
         const size = Number(response.headers.get('content-length')) || 0, chunks: Uint8Array[] = [], reader = response.body.getReader();
@@ -82,7 +86,7 @@ onmessage = async ({ data }: MessageEvent) => {
                 backend = 'wasm';
                 models = await load(backend);
             }
-            post({ type: 'loaded', capabilities: models.capabilities, provider: backend, threads: threads(backend), seconds: (performance.now() - start) / 1000 });
+            post({ type: 'loaded', capabilities: models.capabilities, notices: models.notices, provider: backend, threads: threads(backend), seconds: (performance.now() - start) / 1000 });
         }
         else if (data.type === 'generate') {
             // Exact timing sends mono PCM at the song's own rate and the core makes both frontend streams; otherwise

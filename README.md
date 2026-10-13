@@ -4,7 +4,7 @@ Static site for https://ensomi.app: the ensomi R2 page with an in-browser chart 
 
 - `public/`: the page (`index.html`, `styles.css`, images). The build adds `app.js`, `worker.js`, the runtime's `ensomi-runtime.wasm` and its resampler tables (`resampler/`), which are not committed.
 - `site/`: the page's TypeScript. `app.ts` drives the form, progress, downloads and inspector; `audio.ts` decodes the song at its own sample rate for the Exact timing option, so that the runtime converts the rate as the Python release does; `worker.ts` loads the model and generates in a Web Worker; `player.ts` is the live inspector; `serve.mjs` serves the page locally.
-- `package.json`: the site's one dependency, [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) at exactly 0.2.0, the WebAssembly build of ensomi's Rust runtime with its JavaScript API over ONNX Runtime Web, and the build and test tools.
+- `package.json`: the site's one dependency, [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) at exactly 0.3.0, the WebAssembly build of ensomi's Rust runtime with its JavaScript API over ONNX Runtime Web, and the build and test tools.
 - `packages/runtime/`: the runtime's checks in this site, the browser tests and their report ([README](packages/runtime/README.md)).
 - `docs/brand.md`: name, principles, palette and voice.
 
@@ -32,4 +32,4 @@ npm run serve:site -- 8080 ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r
 
 ## Licences
 
-The site's code and content are MIT (`LICENSE`, copyright Ensomi Labs). Runtime and protocol code follow EnsomiProtocol's licence, Apache-2.0. The model weights are CC BY-NC-SA 4.0, as the page states; BeatThis's ONNX export and front-end arrays keep its MIT licence (`onnx/BeatThis-LICENSE.txt` in the model repository).
+The site's code and content are MIT (`LICENSE`, copyright Ensomi Labs). `@ensomi/runtime` is Apache-2.0 under its own licence, shipped in its npm package, and so are the runtime's checks and browser tests in `packages/runtime/` (`packages/runtime/LICENSE`). ONNX Runtime Web is MIT. The model weights are CC BY-NC-SA 4.0, as the page states; BeatThis's ONNX export and front-end arrays keep its MIT licence (`onnx/BeatThis-LICENSE.txt` in the model repository).

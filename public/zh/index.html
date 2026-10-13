@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ensomi：在浏览器里为你喜欢的歌生成 osu!mania 谱面</title>
+<meta name="description" content="ensomi 把你听的音乐变成你能玩的音乐。试试我们首个公开可玩的版本 R2：选一首歌，就能在浏览器里得到一张 osu!mania 4K 谱面。也看看我们接下来在做什么。">
+<meta name="theme-color" content="#1c1525">
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta property="og:title" content="ensomi：在浏览器里为你喜欢的歌生成 osu!mania 谱面">
+<meta property="og:description" content="选一首歌，就能在浏览器里得到一张能玩的 osu!mania 4K 谱面。我们首个公开可玩的版本，以及接下来在做的东西。">
+<meta property="og:image" content="https://ensomi.app/img/icon.webp">
+<meta property="og:url" content="https://ensomi.app/zh/">
+<link rel="alternate" hreflang="en" href="https://ensomi.app/">
+<link rel="alternate" hreflang="ja" href="https://ensomi.app/ja/">
+<link rel="alternate" hreflang="zh-CN" href="https://ensomi.app/zh/">
+<link rel="alternate" hreflang="x-default" href="https://ensomi.app/">
+<link rel="stylesheet" href="/styles.css">
+<script type="module" src="/app.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+<div class="hero-band">
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="/zh/"><img src="/mark.png" width="36" height="36" alt="">ensomi</a>
+      <nav class="page-nav" aria-label="页面导航">
+        <a href="#generate" class="desktop-only">生成</a>
+        <a href="#r2">R2</a>
+        <a href="#aim">愿景</a>
+        <a href="#r3">R3</a>
+        <a href="#run">自己运行</a>
+        <a href="#licences">许可</a>
+      </nav>
+      <nav class="langs" aria-label="语言">
+        <a href="/" hreflang="en" lang="en">English</a>
+        <a href="/ja/" hreflang="ja" lang="ja">日本語</a>
+        <a href="/zh/" hreflang="zh-CN" lang="zh-CN" aria-current="page">中文</a>
+      </nav>
+      <div class="icons">
+        <a class="icon-link hf" href="https://huggingface.co/sed-i/ensomi-r2" aria-label="Hugging Face 上的模型" title="Hugging Face"></a>
+        <a class="icon-link gh" href="https://github.com/ensomi-labs" aria-label="GitHub 上的 ensomi-labs" title="GitHub"></a>
+      </div>
+    </header>
+    <div class="hero">
+      <img class="hero-icon" src="/img/icon.webp" width="576" height="576" alt="">
+      <p class="eyebrow">R2 · 首个公开可玩的版本</p>
+      <h1 lang="en"><span class="name">ensomi</span> — Play the music around you.</h1>
+      <p class="jp" lang="ja">えんそみ — 聴く音楽から、参加する音楽へ。</p>
+      <p class="lede">选一首你喜欢的歌，R2 就在你的浏览器里为它写谱。先看着谱面跟着音乐滚动，再导入 osu! 亲自玩。歌曲不会离开你的电脑。</p>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <main id="main">
+    <p class="desktop-note">谱面生成器需要在电脑浏览器中使用。请在电脑上打开此页面，加载模型、选择歌曲并生成谱面。</p>
+    <section id="generate" class="tool" aria-labelledby="generate-title">
+      <h2 id="generate-title" class="visually-hidden">生成谱面</h2>
+      <div class="tool-row">
+        <div class="panel">
+          <h3><span class="step-num">1</span>模型</h3>
+          <fieldset class="choice">
+            <legend class="visually-hidden">模型来源</legend>
+            <label><input type="radio" name="source" value="hub" checked> 从 Hugging Face</label>
+            <label><input type="radio" name="source" value="folder"> 从已下载的文件夹</label>
+          </fieldset>
+          <label id="folder-field" hidden>模型文件夹（<code>ensomi-r2</code> 或其中的 <code>onnx</code> 文件夹）
+            <input type="file" id="folder" webkitdirectory multiple></label>
+          <div><button class="btn primary" id="load" type="button">加载模型</button></div>
+          <div class="meter" id="model-meter" hidden><span></span></div>
+          <p class="status" id="model-status">首次访问时从 <a href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0/onnx"><code>sed-i/ensomi-r2</code></a> 下载约 120 MB，之后从浏览器缓存读取。浏览器支持时，节拍检测使用 WebGPU，其余部分使用 WebAssembly 多线程。模型已缓存时，一首 3:20 的歌在 Apple M5 的 Chrome 上约需 6 秒，不使用 WebGPU 时约需 13 秒。</p>
+        </div>
+        <div class="panel">
+          <h3><span class="step-num">2</span>歌曲</h3>
+          <label>音频文件 <input type="file" id="song" accept="audio/*,.mp3,.ogg,.wav,.flac,.m4a"></label>
+          <p class="status" id="song-status">支持此浏览器能解码的任何格式。文件只留在你的电脑上。</p>
+          <div class="pair">
+            <label>标题 <input type="text" id="title" autocomplete="off"></label>
+            <label>艺术家 <input type="text" id="artist" autocomplete="off"></label>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="conditions">
+        <h3><span class="step-num">3</span>条件</h3>
+        <div class="pair">
+          <div class="star">
+            <label><span class="star-label">星数 <output id="star-value">3.5</output></span>
+              <input type="range" id="star" min="2" max="5.9" step="0.1" value="3.5" aria-describedby="star-note"></label>
+            <p class="small muted" id="star-note">生成的谱面可能比要求的星数更简单或更难；难度控制还会继续改进。</p>
+          </div>
+          <label>种子 · 留空则每次生成新谱面
+            <span class="seed-row"><input type="text" id="seed" inputmode="numeric" placeholder="随机" spellcheck="false"><button type="button" class="btn small" id="new-seed">换一个种子</button></span></label>
+        </div>
+        <div class="exact">
+          <label><input type="checkbox" id="exact" aria-describedby="exact-note"> 精确时间轴</label>
+          <p class="small muted" id="exact-note">按歌曲原始采样率解码，并用与 Python 版相同的方式转换，使节拍时间与 Python 版的差距在千分之几毫秒以内（关闭时最多约 1.3 毫秒）。每首歌多花约 0.5 秒，高采样率文件更久（96 kHz 时约 1.3 秒）。</p>
+        </div>
+        <div class="sections">
+          <h4>分段 <span class="muted small">可选</span></h4>
+          <p class="small muted">可以为歌曲的某一段指定风格或目标星数。时间用 mm:ss 表示。每段 8–32 秒，须在歌曲范围内且互不重叠；一段可以从另一段结束的地方开始。</p>
+          <div id="section-list"></div>
+          <button type="button" class="btn small" id="add-section" disabled>添加分段</button>
+          <p class="invalid" id="section-error" hidden></p>
+        </div>
+      </div>
+
+      <div class="run">
+        <button class="btn primary big" id="generate-button" type="button" disabled>生成谱面</button>
+        <ol class="phases" id="phases" aria-label="进度">
+          <li data-phase="1">准备</li>
+          <li data-phase="2">时间轴</li>
+          <li data-phase="3">音符位置</li>
+          <li data-phase="4">配置</li>
+          <li data-phase="5">导出</li>
+        </ol>
+        <p class="status" id="run-status" aria-live="polite">加载模型并选择歌曲后即可开始。</p>
+      </div>
+      <p class="error" id="error" role="alert" hidden></p>
+    </section>
+
+    <section id="result" aria-labelledby="result-title" hidden>
+      <h2 id="result-title">你的谱面</h2>
+      <div class="inspector">
+        <div class="viewport">
+          <canvas id="lanes" tabindex="0" aria-label="谱面视图：四条轨道上的音符落向判定线。点击跳转，拖动微调，用滚轮或上下方向键移动。"></canvas>
+          <p class="instrument"><span id="identity"></span><span id="clock">0:00.000</span></p>
+        </div>
+        <canvas id="overview" class="overview" aria-label="整首歌的概览，从下到上，显示音符密度。点击或拖动以跳转。"></canvas>
+        <div class="side">
+          <fieldset class="transport">
+            <legend class="visually-hidden">播放</legend>
+            <button class="btn primary" id="play" type="button" aria-pressed="false" aria-keyshortcuts="Space">播放</button>
+            <button class="btn" id="restart" type="button">从头开始</button>
+          </fieldset>
+          <div class="tuning">
+            <div class="preset-row"><span>播放速度</span><div class="presets" id="rates" role="group" aria-label="播放速度"></div></div>
+            <div class="preset-row"><label for="volume">音量</label><span class="volume"><input type="range" id="volume" min="0" max="100" step="5" value="80"><output id="volume-value" for="volume"></output></span></div>
+            <div class="preset-row"><span>下落速度（px/秒）</span><div class="presets" id="speeds" role="group" aria-label="下落速度（像素/秒）"></div></div>
+          </div>
+          <p class="small muted">空格键播放或暂停；← 和 → 前后跳 5 秒。在轨道上点击跳转、拖动微调，用滚轮或 ↑ ↓ 移动。玫瑰色是单点，薰衣草色是长条，紫色区域是你指定的分段。</p>
+          <div class="downloads">
+            <a class="btn primary" id="get-osz" download>下载 .osz</a>
+            <a class="btn" id="get-osu" download>下载 .osu</a>
+          </div>
+          <dl class="receipt" id="receipt"></dl>
+          <details class="timing">
+            <summary id="times-total">生成用时</summary>
+            <table class="times" id="times" aria-label="各阶段用时"></table>
+          </details>
+        </div>
+      </div>
+      <audio id="audio" preload="auto"></audio>
+    </section>
+
+    <section id="why">
+      <h2>我们为什么做 ensomi</h2>
+      <div class="prose">
+        <p>大多数时候，音乐是用来听的。音乐游戏让你走进一首歌：双手跟着节拍，聆听变成了演奏。可一首歌要等有人一个音符一个音符地手工写好谱，才能玩；而你生活中的大多数音乐，永远等不到一张谱面。</p>
+        <p>我们想改变这一点。ensomi 从谱师写的谱面中学习，再根据音频写出新的谱面，让你喜欢的音乐、身边正在播放的音乐，都能变成可以玩的东西。</p>
+      </div>
+    </section>
+
+    <section id="r2">
+      <h2>R2：从一首歌到一张能玩的谱面</h2>
+      <p class="prose">R2 是我们首个公开可玩的版本。它只依靠音频工作，从你的歌到你的谱面，中间经过三步。</p>
+      <ol class="steps">
+        <li><b>找到节拍。</b><span>R2 先听出节拍，再把每个速度段对齐到歌曲中声音开始的位置。</span></li>
+        <li><b>决定音符落在哪里。</b><span>根据听到的声音，一拍一拍地决定音符从哪里开始。</span></li>
+        <li><b>编排谱面。</b><span>它从音符分布相似的人类谱面中取得一种风格，比如长条和多押的多少，再安排轨道、单点和长条。这一步还听不到音频。</span></li>
+      </ol>
+      <p class="prose" style="margin-top: var(--s4)">最后得到的是一张在你浏览器里生成的完整 osu!mania 4K 谱面，可以对着音乐预览，也可以直接在 osu! 里打开。</p>
+      <div class="actions">
+        <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0">Hugging Face 上的模型</a>
+        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/main/docs/research/r2_system.md">阅读报告（英文）</a>
+        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/tree/r2-1.0">代码</a>
+      </div>
+    </section>
+
+    <section id="aim">
+      <h2>我们在做什么</h2>
+      <p class="prose">我们希望听音乐、玩音乐和为音乐写谱成为同一件事。下面四个场景说明了我们的意思。</p>
+      <div class="cols">
+        <div>
+          <p class="eyebrow">随处可玩</p>
+          <h3>身边的音乐，变成你可以玩的东西。</h3>
+          <p>附近已经在放一首歌。ensomi 识别出它、找到播放位置，然后开始一张实时生成的谱面，跟着音乐走，不打断音乐。</p>
+        </div>
+        <div>
+          <p class="eyebrow">写谱</p>
+          <h3>配置由你决定，ensomi 提供候选。</h3>
+          <p>谱师选中一段，请 ensomi 给出配置候选，谱面其余部分保持不动。比较、保留、重试或撤销，选择和表达都留在谱师手中。</p>
+        </div>
+        <div>
+          <p class="eyebrow">练习</p>
+          <h3>用喜欢的音乐练习。</h3>
+          <p>玩家选择喜欢的歌和想提高的动作，谱面就围绕这个动作来生成。</p>
+        </div>
+        <div>
+          <p class="eyebrow">一起玩</p>
+          <h3>你打得好，对手的谱面就会变难。</h3>
+          <p>就像对战俄罗斯方块里消行一样，打得干净的一段或长连击会发出攻击：一串音符或更难的键型，掉进对手接下来要打的谱面里。合作模式下则要互相配合，一个人的演奏会塑造另一个人的谱面。</p>
+        </div>
+      </div>
+      <p class="prose" style="margin-top: var(--s4)">我们还没走到那一步。每个场景都需要这样的谱面：在你要求的难度下可以玩、贴合音乐、整首歌保持统一的风格，并回应你的要求。R2 是我们的第一步：稍等片刻就能得到整首歌的谱面，而且已经可以为其中一段指定风格。它还不能实时跟着音乐生成、不能在有人游玩时改变谱面，也不能重写现有谱面的某一段。</p>
+    </section>
+
+    <section id="r3">
+      <h2>下一步：R3</h2>
+      <p class="prose">R2 是我们首个公开可玩的版本，这只是开始。</p>
+      <p class="prose">我们正在开发下一代系统 R3。和 R2 一样，它涵盖时间轴、音符行（音符落在哪里）和配置（音符如何排列）。它按以下顺序解决 R2 暴露出的问题。</p>
+      <ol class="aims">
+        <li>
+          <h3>音符踩在音乐上</h3>
+          <p>音符应该落在你听到的声音上。我们正在让音符行更精确地对齐音频里实际的内容。</p>
+        </li>
+        <li>
+          <h3>会听音乐的配置</h3>
+          <p>R2 的配置听不到音频。它根据音符的位置而不是声音来排列音符，这体现在不贴合音乐的长条上。在 R3 中，我们把音乐信息引入配置模型，让配置也能“听”。</p>
+        </li>
+        <li>
+          <h3>减少隐藏的调控</h3>
+          <p>R2 在写谱时靠几条校准规则保持稳定，比如一股把谱面拉回既定风格的回复力。我们正在逐一检查，找出它们在哪些谱面上造成了变形。</p>
+        </li>
+        <li>
+          <h3>可信的难度</h3>
+          <p>你要求多少星，谱面就应该是多少星。目前谱面可能比要求的更简单或更难。我们正在改进难度控制，要做好它，可能需要重塑系统的很大一部分。</p>
+        </li>
+      </ol>
+      <p class="prose muted" style="margin-top: var(--s4)">这些是目标，工作仍在进行中。和 R2 一样，只有在确认之后，我们才会说明 R3 能做什么。</p>
+    </section>
+
+    <section id="run">
+      <h2>自己运行</h2>
+      <p class="prose">上面的生成器通过 <code>@ensomi/runtime</code> 在浏览器中运行 R2：神经网络由 ONNX Runtime Web 运行，其余部分由编译成 WebAssembly 的 ensomi Rust 运行时完成。歌曲解码和随机数都在浏览器里进行，所以这里的种子和命令行中相同的种子不会得到相同的谱面。</p>
+      <p class="prose">从命令行运行正式版（已在 Apple 芯片的 macOS 上验证；Linux 和 CUDA 未运行过）：</p>
+<pre><code>git clone https://github.com/ensomi-labs/ensomi-model.git
+cd ensomi-model
+git checkout --detach r2-1.0
+uv sync --python 3.10 --extra mps
+hf download sed-i/ensomi-r2 --revision r2-1.0 --local-dir artifacts/hf-r2
+
+uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
+  --model-dir artifacts/hf-r2 --audio /path/to/song.mp3 --star 3.5 \
+  --title "Song title" --artist "Artist" --seed 0 --out artifacts/my-chart.osz</code></pre>
+      <p class="prose small muted">首次运行还会从作者处下载 BeatThis 的检查点（81 MB）。解码 WAV 以外的音频需要 ffmpeg。<code>--help</code> 会列出所有可用的请求。完整说明见 <a href="https://huggingface.co/sed-i/ensomi-r2">Hugging Face 模型卡</a>（英文）。</p>
+    </section>
+
+    <section id="licences">
+      <h2>许可</h2>
+      <div class="prose">
+        <p>模型文件以及 Hugging Face 仓库中的其余内容采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可：可以在署名的前提下使用、分享和改编，但不得用于商业用途，改编作品须以相同许可分享。例外是 BeatThis（CPJKU）：它的 ONNX 导出（<code>onnx/beatthis.onnx</code>）和前端数组（<code>onnx/beatthis-mel-filter.bin</code>、<code>onnx/beatthis-hann-window.bin</code>）保留 BeatThis 的 <a href="https://huggingface.co/sed-i/ensomi-r2/blob/r2-1.0/onnx/BeatThis-LICENSE.txt">MIT 许可</a>。模型代码采用 AGPL-3.0-only，浏览器运行时采用 Apache-2.0，在浏览器中运行神经网络的 ONNX Runtime Web 采用 MIT，本网站采用 MIT。具体条款以各许可的正文为准。</p>
+        <div id="notices" hidden>
+          <p>你加载的模型所附带的许可声明：</p>
+          <div id="notice-list"></div>
+        </div>
+        <p>R2 和行模型使用 osu! 上 2 到 6 星的 Ranked 与 Loved 4K 谱面训练。我们不分发这些谱面及其音频。</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <p>ensomi R2，版本 <code>r2-1.0</code>。<a href="https://huggingface.co/sed-i/ensomi-r2">模型</a> · <a href="https://github.com/ensomi-labs/ensomi-model">代码</a> · <a href="https://github.com/ensomi-labs">ensomi-labs</a></p>
+    <p>本页关于 R2 的内容以 R2 报告为准，不作超出报告的声明。R3 仍在开发中。</p>
+  </footer>
+</div>
+</body>
+</html>

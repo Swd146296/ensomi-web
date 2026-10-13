@@ -1,6 +1,7 @@
 import { ControlStatus, PatternKind, decodeAudio, type GenerateChartRequest, type GenerationResult, type ModelCapabilities, type SectionRequest } from '@ensomi/runtime';
 import { decodeSong } from './audio.js';
 import { Player, RATES, VISUAL_SPEEDS } from './player.js';
+import { t } from './i18n.js';
 
 /** The generator page: model loading, song decoding, conditions, progress, result and inspector. */
 // The model files at the release tag, not main. Pointing it at another revision also needs a new cache name in worker.ts.
@@ -11,8 +12,7 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getEleme
 const field = (id: string) => $<HTMLInputElement>(id);
 
 const KINDS: Record<string, PatternKind | 'star'> = { jumpstream: PatternKind.JUMPSTREAM, chordstream: PatternKind.CHORDSTREAM, stream: PatternKind.STREAM, jack: PatternKind.JACK, chordjack: PatternKind.CHORDJACK, section_star: 'star' };
-const PHASES = ['', 'Prepare', 'Timing', 'Rows', 'Arrangement', 'Export'];
-const RECEIPT_TIMES: [string, string][] = [['pcm', 'Prepare PCM'], ['spectrogram', 'BeatThis spectrogram'], ['beatthis', 'BeatThis network'], ['mel', 'Log-Mel features'], ['grid', 'Timing grid'], ['rows', 'Rows model'], ['prior', 'Prior'], ['arrangement', 'R2 arrangement'], ['export', 'Export']];
+const RECEIPT_TIMES = ['pcm', 'spectrogram', 'beatthis', 'mel', 'grid', 'rows', 'prior', 'arrangement', 'export'];
 
 interface Song { file: File; buffer: ArrayBuffer; mel: Float32Array; beatthis: Float32Array; durationMs: number; decodeSeconds: number }
 interface SectionDraft { start: string; end: string; kind: string; strength: number; star: number }
@@ -25,7 +25,7 @@ let phase = { current: 0, started: 0, seconds: [] as number[] };
 const downloaded = new Map<string, [number, number]>();
 
 const mb = (bytes: number) => (bytes / 1e6).toFixed(1);
-const providerName = (name: string) => name === 'webgpu' ? 'WebGPU' : threads > 1 ? `WebAssembly, ${threads} threads` : 'WebAssembly, one thread';
+const providerName = (name: string) => name === 'webgpu' ? 'WebGPU' : threads > 1 ? t.wasmThreads(threads) : t.wasmOneThread;
 function clock(ms: number, millis = false) {
     const total = Math.max(0, ms) / 1000, minutes = Math.floor(total / 60), seconds = total - minutes * 60;
     return `${minutes}:${millis ? seconds.toFixed(3).padStart(6, '0') : String(Math.floor(seconds)).padStart(2, '0')}`;
@@ -54,21 +54,21 @@ function startWorker() {
         else if (data.type === 'result') showResult(data.result);
         else if (data.type === 'error') onError(data);
     };
-    w.onerror = event => onError({ during: loading ? 'load' : 'generate', message: event.message || 'the generator could not start' });
+    w.onerror = event => onError({ during: loading ? 'load' : 'generate', message: event.message || t.workerFailed });
     return w;
 }
 
 $('load').addEventListener('click', () => {
     const folder = field('folder').files;
     if (sourceIsFolder() && !folder?.length)
-        return showError('Choose the model folder first: the downloaded sed-i/ensomi-r2 folder or its onnx folder.');
+        return showError(t.chooseFolder);
     clearError();
     loading = true;
     caps = undefined;
     downloaded.clear();
     $('model-meter').hidden = false;
     setMeter(0);
-    $('model-status').textContent = 'Starting…';
+    $('model-status').textContent = t.starting;
     update();
     worker ??= startWorker();
     worker.postMessage({ type: 'load', base: new URL(params.get('model') ?? HUB, location.href).href, files: sourceIsFolder() ? Array.from(folder!) : undefined, backend: params.get('backend') });
@@ -87,8 +87,8 @@ function onFile(data: { path: string; loaded: number; size: number; cached: bool
     }
     setMeter(size ? loaded / size : 0);
     $('model-status').textContent = data.cached
-        ? `Reading the model from this browser's cache · ${mb(loaded)} MB so far`
-        : `Downloading the model: ${mb(loaded)} of ${mb(size)} MB`;
+        ? t.readingCache(mb(loaded))
+        : t.downloading(mb(loaded), mb(size));
 }
 
 function onLoaded(data: { capabilities: ModelCapabilities; notices: { path: string; text: string }[]; provider: string; threads: number; seconds: number }) {
@@ -98,7 +98,7 @@ function onLoaded(data: { capabilities: ModelCapabilities; notices: { path: stri
     loadSeconds = data.seconds;
     loading = false;
     $('model-meter').hidden = true;
-    $('model-status').textContent = `${caps.model_name} ${caps.model_version} is ready on ${providerName(provider)}, loaded in ${loadSeconds.toFixed(1)} s.`;
+    $('model-status').textContent = t.modelReady(`${caps.model_name} ${caps.model_version}`, providerName(provider), loadSeconds.toFixed(1));
     const star = field('star');
     star.min = String(caps.min_star);
     star.max = String(Math.round((caps.max_star_exclusive - 0.1) * 10) / 10);
@@ -123,12 +123,12 @@ function onError(data: { during: string; message: string }) {
     if (data.during === 'load') {
         loading = false;
         $('model-meter').hidden = true;
-        $('model-status').textContent = 'The model is not loaded.';
-        showError(`Could not load the model: ${data.message}`);
+        $('model-status').textContent = t.modelNotLoaded;
+        showError(t.loadFailed(data.message));
     }
     else {
         finishRun();
-        showError(`Generation failed: ${data.message}`);
+        showError(t.generationFailed(data.message));
     }
     update();
 }
@@ -140,11 +140,11 @@ field('song').addEventListener('change', async () => {
     clearError();
     song = undefined;
     update();
-    $('song-status').textContent = `Decoding ${file.name}…`;
+    $('song-status').textContent = t.decoding(file.name);
     try {
         const start = performance.now(), buffer = await file.arrayBuffer(), { pcm } = await decodeAudio(buffer);
         song = { file, buffer, mel: pcm.mel!, beatthis: pcm.beatthis!, durationMs: pcm.samples.length / 24000 * 1000, decodeSeconds: (performance.now() - start) / 1000 };
-        $('song-status').textContent = `${file.name} · ${clock(song.durationMs)} long · decoded in ${song.decodeSeconds.toFixed(1)} s`;
+        $('song-status').textContent = t.decoded(file.name, clock(song.durationMs), song.decodeSeconds.toFixed(1));
         const title = field('title');
         if (!title.value || title.dataset.auto === 'true') {
             title.value = file.name.replace(/\.[^.]+$/, '');
@@ -152,8 +152,8 @@ field('song').addEventListener('change', async () => {
         }
     }
     catch {
-        $('song-status').textContent = 'No song loaded.';
-        showError(`This browser could not decode ${file.name}. Try an MP3, OGG or WAV file.`);
+        $('song-status').textContent = t.noSong;
+        showError(t.cannotDecode(file.name));
     }
     renderSections();
     update();
@@ -183,8 +183,8 @@ function seedValue(): number | bigint | 'random' | undefined {
 
 const sectionOptions = () => (caps?.controls ?? []).filter(c => c.name in KINDS && c.status !== ControlStatus.NOT_WORKING);
 function kindLabel(name: string, status: ControlStatus) {
-    const label = name === 'section_star' ? 'Star target' : name[0].toUpperCase() + name.slice(1);
-    return status === ControlStatus.EXPERIMENTAL ? `${label} (experimental)` : label;
+    const label = name === 'section_star' ? t.starTarget : name[0].toUpperCase() + name.slice(1);
+    return status === ControlStatus.EXPERIMENTAL ? t.experimental(label) : label;
 }
 
 $('add-section').addEventListener('click', () => {
@@ -199,9 +199,9 @@ function renderSections() {
     sections.forEach((section, i) => {
         const row = document.createElement('div'), isStar = section.kind === 'section_star';
         row.className = 'section-row';
-        row.innerHTML = `<label>Start <input type="text" class="start" spellcheck="false" autocomplete="off"></label>
-<label>End <input type="text" class="end" spellcheck="false" autocomplete="off"></label>
-<label>Kind <select class="kind"></select></label>
+        row.innerHTML = `<label>${t.start} <input type="text" class="start" spellcheck="false" autocomplete="off"></label>
+<label>${t.end} <input type="text" class="end" spellcheck="false" autocomplete="off"></label>
+<label>${t.kind} <select class="kind"></select></label>
 <label class="value-label"><span><span class="value-name"></span><output></output></span><input type="range" class="value"></label>
 <button type="button" class="remove">×</button>
 <p class="note"></p>`;
@@ -210,12 +210,12 @@ function renderSections() {
         start.value = section.start;
         end.value = section.end;
         for (const option of options) kind.add(new Option(kindLabel(option.name, option.status), option.name, false, option.name === section.kind));
-        q('.value-name').textContent = isStar ? 'Star' : 'Strength';
+        q('.value-name').textContent = isStar ? t.star : t.strength;
         Object.assign(value, isStar ? { min: String(caps!.min_star), max: field('star').max, step: '0.1' } : { min: '0', max: '1', step: '0.05' });
         value.value = String(isStar ? section.star : section.strength);
         output.textContent = isStar ? section.star.toFixed(1) : section.strength.toFixed(2);
         q('.note').textContent = options.find(o => o.name === section.kind)?.note ?? '';
-        q('.remove').setAttribute('aria-label', `Remove section ${i + 1}`);
+        q('.remove').setAttribute('aria-label', t.removeSection(i + 1));
         start.addEventListener('input', () => { section.start = start.value; update(); });
         end.addEventListener('input', () => { section.end = end.value; update(); });
         kind.addEventListener('change', () => { section.kind = kind.value; renderSections(); update(); });
@@ -233,16 +233,16 @@ function renderSections() {
 function sectionRequests(): SectionRequest[] | string {
     const requests: SectionRequest[] = [];
     for (const [i, section] of sections.entries()) {
-        const name = `Section ${i + 1}`, start = parseClock(section.start), end = parseClock(section.end), target = KINDS[section.kind];
-        if (start === undefined || end === undefined) return `${name}: enter start and end as mm:ss, with seconds from 00 to 59.`;
-        if (end <= start) return `${name}: end must be after start.`;
-        if (end > song!.durationMs) return `${name}: keep the span inside the song (${clock(song!.durationMs)}).`;
-        if (end - start < 8000 || end - start > 32000) return `${name}: a section must last 8–32 seconds.`;
+        const name = t.section(i + 1), start = parseClock(section.start), end = parseClock(section.end), target = KINDS[section.kind];
+        if (start === undefined || end === undefined) return t.sectionClock(name);
+        if (end <= start) return t.sectionOrder(name);
+        if (end > song!.durationMs) return t.sectionInside(name, clock(song!.durationMs));
+        if (end - start < 8000 || end - start > 32000) return t.sectionLength(name);
         requests.push(target === 'star' ? { start_ms: start, end_ms: end, star: section.star } : { start_ms: start, end_ms: end, pattern: { kind: target, strength: section.strength } });
     }
     const sorted = requests.slice().sort((a, b) => a.start_ms - b.start_ms);
     for (let i = 1; i < sorted.length; i++)
-        if (sorted[i].start_ms < sorted[i - 1].end_ms) return 'Sections must not overlap. One may start where another ends.';
+        if (sorted[i].start_ms < sorted[i - 1].end_ms) return t.sectionOverlap;
     return requests;
 }
 
@@ -250,15 +250,15 @@ function update() {
     const checked = caps && song ? sectionRequests() : [], sectionError = typeof checked === 'string' ? checked : '';
     $('section-error').textContent = sectionError;
     $('section-error').hidden = !sectionError;
-    const blocker = !caps ? (loading ? 'Loading the model…' : 'Load the model to start.')
-        : !song ? 'Choose a song.'
-            : song.durationMs < 3000 ? 'The song must be at least 3 seconds long.'
-                : seedValue() === undefined ? 'The seed must be a whole number from 0 to 18446744073709551615, or blank for a new chart.'
-                    : sectionError ? 'Fix the sections above.' : '';
+    const blocker = !caps ? (loading ? t.loadingModel : t.loadToStart)
+        : !song ? t.chooseSong
+            : song.durationMs < 3000 ? t.songTooShort
+                : seedValue() === undefined ? t.badSeed
+                    : sectionError ? t.fixSections : '';
     $<HTMLButtonElement>('generate-button').disabled = generating || Boolean(blocker);
     $<HTMLButtonElement>('add-section').disabled = generating || !caps || !song || !sectionOptions().length;
     $<HTMLButtonElement>('load').disabled = loading || generating;
-    if (!generating) $('run-status').textContent = blocker || 'Ready to generate.';
+    if (!generating) $('run-status').textContent = blocker || t.readyToGenerate;
 }
 
 // Generate
@@ -275,7 +275,7 @@ $('generate-button').addEventListener('click', async () => {
     renderPhases();
     timer = window.setInterval(renderPhases, 200);
     update();
-    $('run-status').textContent = `Generating on ${providerName(provider)}…`;
+    $('run-status').textContent = t.generating(providerName(provider));
     const request: GenerateChartRequest = { audio: { asset_id: song.file.name }, star: job.star, seed, controls: { sections: requests }, title, ...(artist ? { artist } : {}) };
     const audio = { name: song.file.name, bytes: new Uint8Array(song.buffer) };
     if (!field('exact').checked)
@@ -299,7 +299,7 @@ function renderPhases() {
         const p = Number(item.dataset.phase), active = generating && p === phase.current;
         const seconds = active ? (performance.now() - phase.started) / 1000 : phase.seconds[p];
         item.className = active ? 'active' : seconds !== undefined ? 'done' : '';
-        item.textContent = PHASES[p] + (seconds !== undefined ? ` · ${seconds.toFixed(1)} s` : '');
+        item.textContent = t.phases[p] + (seconds !== undefined ? ` · ${seconds.toFixed(1)} s` : '');
     }
 }
 
@@ -326,24 +326,24 @@ function showResult(result: GenerationResult) {
     Object.assign($<HTMLAnchorElement>('get-osu'), { href: osu, download: `${name}.osu` });
 
     const facts: [string, string][] = [
-        ['Model', `${result.receipt.model_name} ${result.receipt.model_version}`],
-        ['Provider', providerName(provider)],
-        ['Song', `${done.song.file.name} · ${clock(done.song.durationMs)}`],
-        ['Star', done.star.toFixed(1)],
-        ['Seed', done.random ? `${done.seed} (drawn at random)` : String(done.seed)],
-        ['Notes', `${objects.length.toLocaleString('en')}: ${(objects.length - holds).toLocaleString('en')} taps, ${holds.toLocaleString('en')} long notes`],
-        ['Head rows', Number(detail.rows.K).toLocaleString('en')],
-        ['Tempo', detail.rows.segments.map((s: number[]) => (60000 / s[1]).toFixed(1)).join(', ') + ' BPM'],
-        ['Sections', done.sections.length ? String(done.sections.length) : 'none'],
+        [t.receipt.model, `${result.receipt.model_name} ${result.receipt.model_version}`],
+        [t.receipt.provider, providerName(provider)],
+        [t.receipt.song, `${done.song.file.name} · ${clock(done.song.durationMs)}`],
+        [t.receipt.star, done.star.toFixed(1)],
+        [t.receipt.seed, done.random ? t.randomSeed(String(done.seed)) : String(done.seed)],
+        [t.receipt.notes, t.noteCounts(objects.length.toLocaleString('en'), (objects.length - holds).toLocaleString('en'), holds.toLocaleString('en'))],
+        [t.receipt.headRows, Number(detail.rows.K).toLocaleString('en')],
+        [t.receipt.tempo, detail.rows.segments.map((s: number[]) => (60000 / s[1]).toFixed(1)).join(', ') + ' BPM'],
+        [t.receipt.sections, done.sections.length ? String(done.sections.length) : t.none],
     ];
-    if (done.exact) facts.push(['Timing', `exact, from ${done.exact.rate} Hz`]);
+    if (done.exact) facts.push([t.receipt.timing, t.exactFrom(done.exact.rate)]);
     $('receipt').replaceChildren(...facts.flatMap(([label, value]) => {
         const dt = document.createElement('dt'), dd = document.createElement('dd');
         dt.textContent = label;
         dd.textContent = value;
         return [dt, dd];
     }));
-    const rows: [string, number, boolean?][] = [['Model load', loadSeconds], ['Audio decode', done.song.decodeSeconds], ...(done.exact ? [['Exact-timing decode', done.exact.decodeSeconds] as [string, number]] : []), ...RECEIPT_TIMES.map(([key, label]): [string, number] => [label, detail.seconds[key]]), ['Generation total', detail.seconds.total, true]];
+    const rows: [string, number, boolean?][] = [[t.modelLoad, loadSeconds], [t.audioDecode, done.song.decodeSeconds], ...(done.exact ? [[t.exactDecode, done.exact.decodeSeconds] as [string, number]] : []), ...RECEIPT_TIMES.map((key): [string, number] => [t.times[key], detail.seconds[key]]), [t.total, detail.seconds.total, true]];
     $('times').replaceChildren(...rows.map(([label, seconds, total]) => {
         const tr = document.createElement('tr'), th = document.createElement('th'), td = document.createElement('td');
         th.scope = 'row';
@@ -353,13 +353,13 @@ function showResult(result: GenerationResult) {
         tr.append(th, td);
         return tr;
     }));
-    $('times-total').textContent = `Generated in ${detail.seconds.total.toFixed(1)} s`;
+    $('times-total').textContent = t.generatedIn(detail.seconds.total.toFixed(1));
 
     player.audio.src = audio;
     player.load({ chart: result.chart, segments: detail.rows.segments, sections: done.sections });
     $('identity').textContent = [done.title, done.artist, `ensomi R2 s${done.seed}`].filter(Boolean).join(' · ');
     $('result').hidden = false;
-    $('run-status').textContent = `Done in ${detail.seconds.total.toFixed(1)} s.`;
+    $('run-status').textContent = t.doneIn(detail.seconds.total.toFixed(1));
     update();
     $('result').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
@@ -367,8 +367,8 @@ function showResult(result: GenerationResult) {
 // Inspector controls
 $('play').addEventListener('click', () => player.toggle());
 $('restart').addEventListener('click', () => player.seek(0));
-player.audio.addEventListener('play', () => { $('play').textContent = 'Pause'; $('play').setAttribute('aria-pressed', 'true'); });
-player.audio.addEventListener('pause', () => { $('play').textContent = 'Play'; $('play').setAttribute('aria-pressed', 'false'); });
+player.audio.addEventListener('play', () => { $('play').textContent = t.pause; $('play').setAttribute('aria-pressed', 'true'); });
+player.audio.addEventListener('pause', () => { $('play').textContent = t.play; $('play').setAttribute('aria-pressed', 'false'); });
 
 function presets(id: string, values: number[], initial: number, label: (v: number) => string, apply: (v: number) => void) {
     const box = $(id), buttons = values.map(v => {

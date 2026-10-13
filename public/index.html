@@ -14,6 +14,10 @@
 <meta property="og:description" content="Choose a song and get a playable osu!mania 4K chart, made in your browser. Our first publicly playable release, and what we are building next.">
 <meta property="og:image" content="https://ensomi.app/img/icon.webp">
 <meta property="og:url" content="https://ensomi.app/">
+<link rel="alternate" hreflang="en" href="https://ensomi.app/">
+<link rel="alternate" hreflang="ja" href="https://ensomi.app/ja/">
+<link rel="alternate" hreflang="zh-CN" href="https://ensomi.app/zh/">
+<link rel="alternate" hreflang="x-default" href="https://ensomi.app/">
 <link rel="stylesheet" href="/styles.css">
 <script type="module" src="/app.js"></script>
 </head>
@@ -23,7 +27,7 @@
   <div class="wrap">
     <header class="top">
       <a class="brand" href="/"><img src="/mark.png" width="36" height="36" alt="">ensomi</a>
-      <nav aria-label="Sections">
+      <nav class="page-nav" aria-label="Sections">
         <a href="#generate" class="desktop-only">Generate</a>
         <a href="#r2">R2</a>
         <a href="#aim">Vision</a>
@@ -31,6 +35,15 @@
         <a href="#run">Run it</a>
         <a href="#licences">Licences</a>
       </nav>
+      <nav class="langs" aria-label="Language">
+        <a href="/" hreflang="en" lang="en" aria-current="page">English</a>
+        <a href="/ja/" hreflang="ja" lang="ja">日本語</a>
+        <a href="/zh/" hreflang="zh-CN" lang="zh-CN">中文</a>
+      </nav>
+      <div class="icons">
+        <a class="icon-link hf" href="https://huggingface.co/sed-i/ensomi-r2" aria-label="The model on Hugging Face" title="Hugging Face"></a>
+        <a class="icon-link gh" href="https://github.com/ensomi-labs" aria-label="ensomi-labs on GitHub" title="GitHub"></a>
+      </div>
     </header>
     <div class="hero">
       <img class="hero-icon" src="/img/icon.webp" width="576" height="576" alt="">

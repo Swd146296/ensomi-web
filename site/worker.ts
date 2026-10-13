@@ -5,8 +5,9 @@ const ORT_WASM = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.2/dist/';
 // The runtime's Wasm core and its resampler tables, copied beside this script by `npm run build:site`. The core reads
 // the tables only for exact timing, the three for the song's rate.
 const CORE = new URL('ensomi-runtime.wasm', self.location.href), RESAMPLER = urlSource(new URL('resampler/', self.location.href).href);
-// Model files are cached by URL under this name; change it when the files behind the model URL change.
-const CACHE = 'ensomi-r2-1.0';
+// Model files are cached by URL under this name; change it when the model URL or the files behind it change. Loading
+// deletes the caches of other names, such as `ensomi-r2-1.0`, which held the files of the Hub's main branch.
+const CACHE = 'ensomi-r2@r2-1.0';
 
 let models: Models | undefined;
 const post = (message: unknown, transfer: Transferable[] = []) => postMessage(message, { transfer });
@@ -64,6 +65,7 @@ onmessage = async ({ data }: MessageEvent) => {
             const start = performance.now();
             await models?.dispose();
             models = undefined;
+            await self.caches?.keys().then((names) => Promise.all(names.filter((name) => name !== CACHE).map((name) => caches.delete(name)))).catch(() => undefined);
             const source = data.files ? localFilesSource(data.files) : cachedSource(data.base);
             // WebAssembly threads need cross-origin isolation (public/_headers). Next to WebGPU, WebAssembly runs only the
             // per-row graphs, which are fastest on two threads; on its own it also runs BeatThis, which gains up to four.

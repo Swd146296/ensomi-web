@@ -1,5 +1,6 @@
 import { ControlStatus, GenerationPhase, PatternKind, decodeAudio, type GenerateChartRequest, type GenerationResult, type ModelCapabilities, type SectionRequest } from '@ensomi/runtime';
 import { decodeSong } from './audio.js';
+import { maniaStar } from './star.js';
 import { Player, RATES, VISUAL_SPEEDS } from './player.js';
 import { t } from './i18n.js';
 
@@ -410,7 +411,7 @@ function showResult(result: GenerationResult) {
         [t.receipt.model, `${result.receipt.model_name} ${result.receipt.model_version}`],
         [t.receipt.provider, providerName(provider)],
         [t.receipt.song, `${done.song.file.name} · ${clock(done.song.durationMs)}`],
-        [t.receipt.star, done.star.toFixed(1)],
+        [t.receipt.star, t.starResult(maniaStar(objects).toFixed(2), done.star.toFixed(1))],
         [t.receipt.seed, done.random ? t.randomSeed(String(done.seed)) : String(done.seed)],
         [t.receipt.notes, t.noteCounts(objects.length.toLocaleString('en'), (objects.length - holds).toLocaleString('en'), holds.toLocaleString('en'))],
         [t.receipt.headRows, Number(detail.rows.K).toLocaleString('en')],

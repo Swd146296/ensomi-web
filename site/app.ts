@@ -1,4 +1,4 @@
-import { ControlStatus, PatternKind, decodeAudio, type GenerateChartRequest, type GenerationResult, type ModelCapabilities, type SectionRequest } from '@ensomi/runtime';
+import { ControlStatus, GenerationPhase, PatternKind, decodeAudio, type GenerateChartRequest, type GenerationResult, type ModelCapabilities, type SectionRequest } from '@ensomi/runtime';
 import { decodeSong } from './audio.js';
 import { Player, RATES, VISUAL_SPEEDS } from './player.js';
 import { t } from './i18n.js';
@@ -12,16 +12,21 @@ const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getEleme
 const field = (id: string) => $<HTMLInputElement>(id);
 
 const KINDS: Record<string, PatternKind | 'star'> = { jumpstream: PatternKind.JUMPSTREAM, chordstream: PatternKind.CHORDSTREAM, stream: PatternKind.STREAM, jack: PatternKind.JACK, chordjack: PatternKind.CHORDJACK, section_star: 'star' };
-const RECEIPT_TIMES = ['pcm', 'spectrogram', 'beatthis', 'mel', 'grid', 'rows', 'prior', 'arrangement', 'export'];
+const RECEIPT_TIMES = ['rows', 'prior', 'arrangement', 'export'];
+// The stages that read the conditions; they run together when Generate is pressed, without progress of their own.
+const CHART_PHASES = [GenerationPhase.ROWS, GenerationPhase.ARRANGEMENT, GenerationPhase.EXPORT];
 
 interface Song { file: File; buffer: ArrayBuffer; mel: Float32Array; beatthis: Float32Array; durationMs: number; decodeSeconds: number }
 interface SectionDraft { start: string; end: string; kind: string; strength: number; star: number }
-interface Job { song: Song; title: string; artist: string; seed: number | bigint; random: boolean; star: number; sections: SectionRequest[]; exact?: { rate: number; decodeSeconds: number } }
+/** A song's audio stages, run in the worker as soon as the model and the song are ready. `posted` settles once the worker
+ * has the request, `seconds` arrive when the stages are done. */
+interface Prep { id: number; song: Song; exact: boolean; posted: Promise<void>; decode?: { rate: number; seconds: number }; seconds?: { pcm: number; timing: number }; failed?: boolean }
+interface Job { song: Song; title: string; artist: string; seed: number | bigint; random: boolean; star: number; sections: SectionRequest[]; prep: Prep }
 
 let worker: Worker | undefined, caps: ModelCapabilities | undefined, provider = '', threads = 1, loadSeconds = 0, loading = false;
-let song: Song | undefined, job: Job | undefined, generating = false, timer = 0;
+let song: Song | undefined, prep: Prep | undefined, prepCount = 0, job: Job | undefined, generating = false, timer = 0;
 let sections: SectionDraft[] = [], urls: string[] = [];
-let phase = { current: 0, started: 0, seconds: [] as number[] };
+let phase = { active: [] as number[], started: 0, seconds: [] as number[] };
 const downloaded = new Map<string, [number, number]>();
 
 const mb = (bytes: number) => (bytes / 1e6).toFixed(1);
@@ -50,7 +55,8 @@ function startWorker() {
     w.onmessage = ({ data }) => {
         if (data.type === 'file') onFile(data);
         else if (data.type === 'loaded') onLoaded(data);
-        else if (data.type === 'phase') markPhase(data.phase);
+        else if (data.type === 'phase') markPhase(data);
+        else if (data.type === 'prepared') onPrepared(data);
         else if (data.type === 'result') showResult(data.result);
         else if (data.type === 'error') onError(data);
     };
@@ -65,6 +71,7 @@ $('load').addEventListener('click', () => {
     clearError();
     loading = true;
     caps = undefined;
+    prep = undefined;
     downloaded.clear();
     $('model-meter').hidden = false;
     setMeter(0);
@@ -104,6 +111,7 @@ function onLoaded(data: { capabilities: ModelCapabilities; notices: { path: stri
     star.max = String(Math.round((caps.max_star_exclusive - 0.1) * 10) / 10);
     showNotices(data.notices);
     renderSections();
+    startPrepare();
     update();
 }
 
@@ -119,12 +127,20 @@ function showNotices(notices: { path: string; text: string }[]) {
     $('notices').hidden = !notices.length;
 }
 
-function onError(data: { during: string; message: string }) {
+function onError(data: { during: string; id?: number; message: string }) {
     if (data.during === 'load') {
         loading = false;
         $('model-meter').hidden = true;
         $('model-status').textContent = t.modelNotLoaded;
         showError(t.loadFailed(data.message));
+    }
+    else if (data.during === 'prepare') {
+        // A generation waiting for these stages fails with them; Generate then runs them again.
+        if (!prep || data.id !== prep.id) return;
+        prep.failed = true;
+        phase.active = [];
+        ticking();
+        showError(t.timingFailed(data.message));
     }
     else {
         finishRun();
@@ -139,6 +155,7 @@ field('song').addEventListener('change', async () => {
     if (!file) return;
     clearError();
     song = undefined;
+    prep = undefined;
     update();
     $('song-status').textContent = t.decoding(file.name);
     try {
@@ -156,9 +173,50 @@ field('song').addEventListener('change', async () => {
         showError(t.cannotDecode(file.name));
     }
     renderSections();
+    startPrepare();
     update();
 });
 field('title').addEventListener('input', () => { field('title').dataset.auto = 'false'; });
+field('exact').addEventListener('change', () => { startPrepare(); update(); });
+
+/** Runs the song's audio stages (PCM, BeatThis and the beat grid) as soon as the model and the song are both ready, so
+ * that Generate runs only the stages that read the conditions. Exact timing decodes the song again at its own rate first
+ * (site/audio.ts); toggling it prepares the song again. */
+function startPrepare() {
+    if (!caps || !song || song.durationMs < 3000) return;
+    const current = song, exact = field('exact').checked, id = ++prepCount;
+    const posted = (async () => {
+        if (!exact)
+            return worker!.postMessage({ type: 'prepare', id, mel: current.mel, beatthis: current.beatthis });
+        try {
+            const start = performance.now(), { pcm, rate } = await decodeSong(current.buffer);
+            // A song or setting chosen during the decode has been sent since; this one is not.
+            if (prep?.id !== id) return;
+            prep.decode = { rate, seconds: (performance.now() - start) / 1000 };
+            worker!.postMessage({ type: 'prepare', id, pcm, rate }, [pcm.buffer]);
+        }
+        catch {
+            if (prep?.id !== id) return;
+            prep.failed = true;
+            showError(t.cannotDecode(current.file.name));
+            update();
+        }
+    })();
+    prep = { id, song: current, exact, posted };
+    ticking();
+}
+const preparing = () => Boolean(prep && !prep.seconds && !prep.failed);
+
+function onPrepared(data: { id: number; seconds: { pcm: number; timing: number } }) {
+    if (data.id !== prep?.id) return;
+    prep.seconds = data.seconds;
+    phase.seconds[GenerationPhase.LOADING] = data.seconds.pcm;
+    phase.seconds[GenerationPhase.TIMING] = data.seconds.timing;
+    phase.active = generating ? CHART_PHASES : [];
+    phase.started = performance.now();
+    ticking();
+    update();
+}
 
 // 3. Conditions
 field('star').addEventListener('input', () => { $('star-value').textContent = Number(field('star').value).toFixed(1); });
@@ -258,7 +316,9 @@ function update() {
     $<HTMLButtonElement>('generate-button').disabled = generating || Boolean(blocker);
     $<HTMLButtonElement>('add-section').disabled = generating || !caps || !song || !sectionOptions().length;
     $<HTMLButtonElement>('load').disabled = loading || generating;
-    if (!generating) $('run-status').textContent = blocker || t.readyToGenerate;
+    // A generation starts from the stages prepared when it was asked for; another song or setting waits until it is done.
+    field('song').disabled = field('exact').disabled = generating;
+    if (!generating) $('run-status').textContent = blocker || (preparing() ? t.timing : prep?.seconds ? t.timingReady : t.readyToGenerate);
 }
 
 // Generate
@@ -267,47 +327,65 @@ $('generate-button').addEventListener('click', async () => {
     const requests = sectionRequests(), entered = seedValue();
     if (typeof requests === 'string' || entered === undefined) return;
     clearError();
+    // Stages that failed run again first.
+    if (!prep || prep.failed) startPrepare();
     // A blank seed draws a new seed for each generation, as in the app; the result shows the seed used.
     const title = field('title').value.trim() || song.file.name.replace(/\.[^.]+$/, ''), artist = field('artist').value.trim(), seed = entered === 'random' ? randomSeed() : entered;
-    job = { song, title, artist, seed, random: entered === 'random', star: Number(field('star').value), sections: requests };
+    job = { song, title, artist, seed, random: entered === 'random', star: Number(field('star').value), sections: requests, prep: prep! };
     generating = true;
-    phase = { current: 0, started: performance.now(), seconds: [] };
-    renderPhases();
-    timer = window.setInterval(renderPhases, 200);
+    phase.seconds.length = GenerationPhase.ROWS;
+    if (job.prep.seconds) {
+        phase.active = CHART_PHASES;
+        phase.started = performance.now();
+    }
+    ticking();
     update();
     $('run-status').textContent = t.generating(providerName(provider));
     const request: GenerateChartRequest = { audio: { asset_id: song.file.name }, star: job.star, seed, controls: { sections: requests }, title, ...(artist ? { artist } : {}) };
-    const audio = { name: song.file.name, bytes: new Uint8Array(song.buffer) };
-    if (!field('exact').checked)
-        return worker!.postMessage({ type: 'generate', mel: song.mel, beatthis: song.beatthis, request, audio });
-    // Exact timing: the song again at its own rate, which the core converts as the Python release does (site/audio.ts).
-    const start = performance.now(), { pcm, rate } = await decodeSong(song.buffer);
-    job.exact = { rate, decodeSeconds: (performance.now() - start) / 1000 };
-    worker!.postMessage({ type: 'generate', pcm, rate, request, audio }, [pcm.buffer]);
+    await job.prep.posted;
+    if (job.prep.failed) {
+        finishRun();
+        return update();
+    }
+    worker!.postMessage({ type: 'generate', request, audio: { name: song.file.name, bytes: new Uint8Array(song.buffer) } });
 });
 
-function markPhase(next: number) {
+/** Progress of the audio stages: Prepare, then Timing. */
+function markPhase(data: { id: number; phase: number }) {
+    if (data.id !== prep?.id) return;
     const now = performance.now();
-    if (phase.current) phase.seconds[phase.current] = (now - phase.started) / 1000;
-    phase.current = next;
+    if (data.phase === GenerationPhase.LOADING) phase = { active: [], started: now, seconds: [] };
+    for (const p of phase.active) phase.seconds[p] = (now - phase.started) / 1000;
+    phase.active = [data.phase];
     phase.started = now;
     renderPhases();
 }
 
 function renderPhases() {
     for (const item of $('phases').querySelectorAll<HTMLElement>('li')) {
-        const p = Number(item.dataset.phase), active = generating && p === phase.current;
-        const seconds = active ? (performance.now() - phase.started) / 1000 : phase.seconds[p];
+        const p = Number(item.dataset.phase), active = phase.active.includes(p);
+        // A phase running alone counts its seconds; the stages after timing get theirs from the receipt.
+        const seconds = active ? (phase.active.length === 1 ? (performance.now() - phase.started) / 1000 : undefined) : phase.seconds[p];
         item.className = active ? 'active' : seconds !== undefined ? 'done' : '';
         item.textContent = t.phases[p] + (seconds !== undefined ? ` · ${seconds.toFixed(1)} s` : '');
     }
 }
 
-function finishRun() {
-    if (generating && phase.current) phase.seconds[phase.current] = (performance.now() - phase.started) / 1000;
-    generating = false;
-    clearInterval(timer);
+/** Redraws the phases, every 200 ms while a song is being prepared or a chart generated. */
+function ticking() {
+    const busy = generating || preparing();
+    if (busy && !timer) timer = window.setInterval(renderPhases, 200);
+    if (!busy && timer) {
+        clearInterval(timer);
+        timer = 0;
+    }
     renderPhases();
+}
+
+function finishRun() {
+    generating = false;
+    phase.active = phase.active.filter(p => !CHART_PHASES.includes(p));
+    ticking();
 }
 
 // Result
@@ -316,8 +394,11 @@ const player = new Player($<HTMLCanvasElement>('lanes'), $<HTMLCanvasElement>('o
 });
 
 function showResult(result: GenerationResult) {
-    finishRun();
     const done = job!, detail = JSON.parse(result.receipt.receipt_json), objects = result.chart.objects, holds = objects.filter(o => o.end_ms !== undefined).length;
+    phase.seconds[GenerationPhase.ROWS] = detail.seconds.rows;
+    phase.seconds[GenerationPhase.ARRANGEMENT] = detail.seconds.prior + detail.seconds.arrangement;
+    phase.seconds[GenerationPhase.EXPORT] = detail.seconds.export;
+    finishRun();
     for (const url of urls) URL.revokeObjectURL(url);
     const name = `${done.artist ? `${done.artist} - ` : ''}${done.title} (ensomi R2 s${done.seed})`.replace(/[\\/:*?"<>|\u0000-\u001f]/g, '').trim().slice(0, 120);
     const osz = URL.createObjectURL(new Blob([result.osz! as BlobPart], { type: 'application/zip' })), osu = URL.createObjectURL(new Blob([result.osu], { type: 'text/plain' })), audio = URL.createObjectURL(done.song.file);
@@ -336,14 +417,16 @@ function showResult(result: GenerationResult) {
         [t.receipt.tempo, detail.rows.segments.map((s: number[]) => (60000 / s[1]).toFixed(1)).join(', ') + ' BPM'],
         [t.receipt.sections, done.sections.length ? String(done.sections.length) : t.none],
     ];
-    if (done.exact) facts.push([t.receipt.timing, t.exactFrom(done.exact.rate)]);
+    if (done.prep.decode) facts.push([t.receipt.timing, t.exactFrom(done.prep.decode.rate)]);
     $('receipt').replaceChildren(...facts.flatMap(([label, value]) => {
         const dt = document.createElement('dt'), dd = document.createElement('dd');
         dt.textContent = label;
         dd.textContent = value;
         return [dt, dd];
     }));
-    const rows: [string, number, boolean?][] = [[t.modelLoad, loadSeconds], [t.audioDecode, done.song.decodeSeconds], ...(done.exact ? [[t.exactDecode, done.exact.decodeSeconds] as [string, number]] : []), ...RECEIPT_TIMES.map((key): [string, number] => [t.times[key], detail.seconds[key]]), [t.total, detail.seconds.total, true]];
+    // The audio stages ran when the song was chosen; the receipt times the stages after them, and its total is theirs.
+    const { decode } = done.prep, stages = done.prep.seconds!;
+    const rows: [string, number, boolean?][] = [[t.modelLoad, loadSeconds], [t.audioDecode, done.song.decodeSeconds], ...(decode ? [[t.exactDecode, decode.seconds] as [string, number]] : []), [t.times.pcm, stages.pcm], [t.times.timing, stages.timing], ...RECEIPT_TIMES.map((key): [string, number] => [t.times[key], detail.seconds[key]]), [t.total, detail.seconds.total, true]];
     $('times').replaceChildren(...rows.map(([label, seconds, total]) => {
         const tr = document.createElement('tr'), th = document.createElement('th'), td = document.createElement('td');
         th.scope = 'row';
@@ -367,8 +450,13 @@ function showResult(result: GenerationResult) {
 // Inspector controls
 $('play').addEventListener('click', () => player.toggle());
 $('restart').addEventListener('click', () => player.seek(0));
-player.audio.addEventListener('play', () => { $('play').textContent = t.pause; $('play').setAttribute('aria-pressed', 'true'); });
-player.audio.addEventListener('pause', () => { $('play').textContent = t.play; $('play').setAttribute('aria-pressed', 'false'); });
+// A new result's audio stops playback without a pause event (the media element load algorithm fires emptied instead).
+function showPlaying() {
+    const playing = !player.audio.paused;
+    $('play').textContent = playing ? t.pause : t.play;
+    $('play').setAttribute('aria-pressed', String(playing));
+}
+for (const type of ['play', 'pause', 'emptied']) player.audio.addEventListener(type, showPlaying);
 
 function presets(id: string, values: number[], initial: number, label: (v: number) => string, apply: (v: number) => void) {
     const box = $(id), buttons = values.map(v => {

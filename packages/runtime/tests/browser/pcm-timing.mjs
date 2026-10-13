@@ -1,6 +1,6 @@
 /** Warm WebGPU generation times of Adventure (96 kHz) and Catch the Moment (44.1 kHz) on the built page with the Exact
  * timing option off and on, to read its cost: the second decode at the file's own rate (the times table's
- * `Exact-timing decode`) and the core's rate conversion (receipt stage `pcm`). Run on bings-mac from packages/runtime
+ * `Exact-timing decode`) and the core's rate conversion (its `Prepare PCM`). Run on bings-mac from packages/runtime
  * with the page served at ENSOMI_TEST_URL (default http://127.0.0.1:8087) and nothing else running, or through
  * pcm-timing.sh. Per round, song and setting: reload (warm load), generate, then generate again in the same page.
  * Writes artifacts/browser-test/pcm-timing.json.
@@ -38,9 +38,10 @@ async function generate([slug, id, ext, star], round, exact, repeat) {
     const wallSeconds = (performance.now() - started) / 1000;
     const r = await page.evaluate(i => ({ receipt: __test.results[i]?.receipt?.receipt_json, songStatus: document.querySelector('#song-status').textContent, table: [...document.querySelectorAll('#times tr')].map(x => [...x.cells].map(c => c.textContent).join('\t')), error: document.querySelector('#error').hidden ? null : document.querySelector('#error').textContent }), index);
     const seconds = r.receipt ? JSON.parse(r.receipt).seconds : null, decode = r.table.find(row => row.startsWith('Exact-timing decode'));
-    const row = { song: slug, round, exact, repeat, wallSeconds, songStatus: r.songStatus, error: r.error, exactDecode: decode, seconds, table: r.table };
+    const pcm = parseFloat(r.table.find(row => row.startsWith('Prepare PCM'))?.split('\t')[1]);
+    const row = { song: slug, round, exact, repeat, wallSeconds, songStatus: r.songStatus, error: r.error, exactDecode: decode, pcm, seconds, table: r.table };
     report.runs.push(row);
-    console.log('RUN', slug, `round=${round}`, exact ? 'exact' : 'off', repeat ? 'same-page' : 'first-after-reload', `pcm=${seconds?.pcm?.toFixed(3)}`, `total=${seconds?.total?.toFixed(3)}`, `wall=${wallSeconds.toFixed(3)}`, '|', decode ?? '', r.error ?? '');
+    console.log('RUN', slug, `round=${round}`, exact ? 'exact' : 'off', repeat ? 'same-page' : 'first-after-reload', `pcm=${pcm.toFixed(3)}`, `total=${seconds?.total?.toFixed(3)}`, `wall=${wallSeconds.toFixed(3)}`, '|', decode ?? '', r.error ?? '');
 }
 try {
     await load(false, false);

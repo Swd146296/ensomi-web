@@ -1,5 +1,21 @@
 # Ensomi R2 browser tests
 
+## Timing prepared before Generate, 2026-10-13, bings-mac
+
+**The page runs a song's audio stages (`prepare`) as soon as the model and the song are ready, and Generate makes the chart from them with `ChartScheduler` in `'whole-chart'` mode. The charts are the ones `generateChart` makes. Generating again while a result plays now stops the audio at 0 with the button back at Play: setting the audio element's `src` pauses it without a `pause` event (the load algorithm fires `emptied`), so the button had stayed at Pause.**
+
+**Same chart.** In Node with `@ensomi/runtime` 0.3.0 (`checks/prepare-equal.mjs`, WASM, one thread; job `20261013-130258-web-prepare-equal`), `generateChart` and `prepare` then `ChartScheduler` give the same chart and `.osu` for Catch the Moment and Hesitation Snow, seed 1 at star 3.5 and seed 7 at star 4.5 with a 20–40 s jumpstream section. In the page (job `20261013-130629-web-prepare-suite2`), the page matrix on WebGPU with the local model gives the hash of every seeded generation in the previous `page-webgpu-local.json` (7 of 7); with Exact timing on, 5 of 7 equal the previous `page-webgpu-local-exact.json`, and the two that differ are Adventure, which that report's runtime 0.1.1 arranged twice. All charts are valid, all downloads match, the blank seed reproduces and the five-second section is refused.
+
+**Behaviour.** `prepare-play.mjs` passes on WebGPU and on WebAssembly: after the song is chosen the worker gets `prepare` and no `generate`; Generate and Generate again send no second `prepare`; generating again while playing leaves the audio paused at 0 and the button at Play, and Play then plays the new result; Exact timing prepares again at 44100 Hz; Generate pressed before Adventure's timing is done gets its result after `prepared`.
+
+| Catch the Moment, seed 1 | Timing, on song load | After Generate |
+| --- | --- | --- |
+| WebGPU | 4.0 s | 1.3–1.5 s |
+| WebAssembly | 15.6 s | about 1.5 s |
+| Node, WASM one thread (`generateChart` 17.2 s) | | 1.0 s |
+
+The receipt from a `Prepared` times only rows, prior, arrangement and export, and its total is theirs; the times table adds Prepare PCM and BeatThis and beat grid from `prepare`'s progress.
+
 ## Runtime 0.2.0, 2026-10-12, bings-mac
 
 **The page generates with `@ensomi/runtime` 0.2.0, which arranges a song once. Its page code is unchanged: the receipt fields it reads are all still there. A whole-song generation through the page with Exact timing on gives the native runtime 0.2.0's chart for the same PCM, seed and request on all four release songs: the `.osu` is byte-identical on WebAssembly, and on WebGPU too except for one Catch the Moment beat length 1.1e-13 ms apart. The headless suite passes.**

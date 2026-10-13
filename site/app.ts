@@ -3,7 +3,8 @@ import { decodeSong } from './audio.js';
 import { Player, RATES, VISUAL_SPEEDS } from './player.js';
 
 /** The generator page: model loading, song decoding, conditions, progress, result and inspector. */
-const HUB = 'https://huggingface.co/sed-i/ensomi-r2/resolve/main/onnx/';
+// The model files at the release tag, not main. Pointing it at another revision also needs a new cache name in worker.ts.
+const HUB = 'https://huggingface.co/sed-i/ensomi-r2/resolve/r2-1.0/onnx/';
 // ?model=<url of a folder holding runtime.json> loads another copy; ?backend=wasm skips WebGPU.
 const params = new URLSearchParams(location.search);
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;

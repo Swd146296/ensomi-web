@@ -71,7 +71,7 @@
             <input type="file" id="folder" webkitdirectory multiple></label>
           <div><button class="btn primary" id="load" type="button">加载模型</button></div>
           <div class="meter" id="model-meter" hidden><span></span></div>
-          <p class="status" id="model-status">首次访问时从 <a href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0/onnx"><code>sed-i/ensomi-r2</code></a> 下载约 120 MB，之后从浏览器缓存读取。浏览器支持时，节拍检测使用 WebGPU，其余部分使用 WebAssembly 多线程。模型已缓存时，一首 3:20 的歌在 Apple M5 的 Chrome 上约需 6 秒，不使用 WebGPU 时约需 13 秒。</p>
+          <p class="status" id="model-status">首次访问时从 <a href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0.1/onnx"><code>sed-i/ensomi-r2</code></a> 下载约 120 MB，之后从浏览器缓存读取。浏览器支持时，节拍检测使用 WebGPU，其余部分使用 WebAssembly 多线程。模型已缓存时，一首 3:20 的歌在 Apple M5 的 Chrome 上约需 6 秒，不使用 WebGPU 时约需 13 秒。</p>
         </div>
         <div class="panel">
           <h3><span class="step-num">2</span>歌曲</h3>
@@ -175,9 +175,9 @@
       <p class="prose" style="margin-top: var(--s4)">最后得到的是一张在你浏览器里生成的完整 osu!mania 4K 谱面，可以对着音乐预览，也可以直接在 osu! 里打开。</p>
       <p class="prose">R2 和行模型使用 osu! 上 2 到 6 星的 Ranked 与 Loved 4K 谱面训练。我们不分发这些谱面及其音频。</p>
       <div class="actions">
-        <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0">Hugging Face 上的模型</a>
+        <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0.1">Hugging Face 上的模型</a>
         <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/main/docs/research/r2_system.md">阅读报告（英文）</a>
-        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/tree/r2-1.0">代码</a>
+        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/tree/r2-1.0.1">代码</a>
       </div>
     </section>
 
@@ -240,9 +240,9 @@
       <p class="prose">从命令行运行正式版（已在 Apple 芯片的 macOS 上验证；Linux 和 CUDA 未运行过）：</p>
 <pre><code>git clone https://github.com/ensomi-labs/ensomi-model.git
 cd ensomi-model
-git checkout --detach r2-1.0
+git checkout --detach r2-1.0.1
 uv sync --python 3.10 --extra mps
-hf download sed-i/ensomi-r2 --revision r2-1.0 --local-dir artifacts/hf-r2
+hf download sed-i/ensomi-r2 --revision r2-1.0.1 --local-dir artifacts/hf-r2
 
 uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
   --model-dir artifacts/hf-r2 --audio /path/to/song.mp3 --star 3.5 \
@@ -252,7 +252,7 @@ uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
   </main>
 
   <footer>
-    <p>ensomi R2，版本 <code>r2-1.0</code>。<a href="https://huggingface.co/sed-i/ensomi-r2">模型</a> · <a href="https://github.com/ensomi-labs/ensomi-model">代码</a> · <a href="https://github.com/ensomi-labs">ensomi-labs</a></p>
+    <p>ensomi R2，版本 <code>r2-1.0.1</code>。<a href="https://huggingface.co/sed-i/ensomi-r2">模型</a> · <a href="https://github.com/ensomi-labs/ensomi-model">代码</a> · <a href="https://github.com/ensomi-labs">ensomi-labs</a></p>
     <p>本页关于 R2 的内容以 R2 报告为准，不作超出报告的声明。R3 仍在开发中。</p>
   </footer>
 </div>

@@ -7,8 +7,8 @@ const ORT_WASM = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.23.2/dist/';
 // the tables only for exact timing, the three for the song's rate.
 const CORE = new URL('ensomi-runtime.wasm', self.location.href), RESAMPLER = urlSource(new URL('resampler/', self.location.href).href);
 // Model files are cached by URL under this name; change it when the model URL or the files behind it change. Loading
-// deletes the caches of other names, such as `ensomi-r2-1.0`, which held the files of the Hub's main branch.
-const CACHE = 'ensomi-r2@r2-1.0';
+// deletes the caches of other names, such as `ensomi-r2@r2-1.0`, which held the same files from the tag before.
+const CACHE = 'ensomi-r2@r2-1.0.1';
 
 let models: Models | undefined;
 // The song prepared last, by the page's id for it; generations start from its Prepared.

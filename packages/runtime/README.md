@@ -1,8 +1,8 @@
 # Runtime checks
 
-The page generates with [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) 0.3.0 from npm, the
+The page generates with [`@ensomi/runtime`](https://www.npmjs.com/package/@ensomi/runtime) 0.3.1 from npm, the
 WebAssembly build of Ensomi's shared Rust runtime ([ensomi-labs/runtime](https://github.com/ensomi-labs/runtime),
-tag `v0.3.0`) and its JavaScript API over ONNX Runtime Web. The repository root's `package.json` pins it exactly; the
+tag `v0.3.1`) and its JavaScript API over ONNX Runtime Web. The repository root's `package.json` pins it exactly; the
 package's README documents the API. This directory holds the checks of that runtime in this site, the browser tests
 and their results. Apache-2.0.
 

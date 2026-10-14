@@ -6,7 +6,7 @@ import { t } from './i18n.js';
 
 /** The generator page: model loading, song decoding, conditions, progress, result and inspector. */
 // The model files at the release tag, not main. Pointing it at another revision also needs a new cache name in worker.ts.
-const HUB = 'https://huggingface.co/sed-i/ensomi-r2/resolve/r2-1.0/onnx/';
+const HUB = 'https://huggingface.co/sed-i/ensomi-r2/resolve/r2-1.0.1/onnx/';
 // ?model=<url of a folder holding runtime.json> loads another copy; ?backend=wasm skips WebGPU.
 const params = new URLSearchParams(location.search);
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;

@@ -71,7 +71,7 @@
             <input type="file" id="folder" webkitdirectory multiple></label>
           <div><button class="btn primary" id="load" type="button">Load model</button></div>
           <div class="meter" id="model-meter" hidden><span></span></div>
-          <p class="status" id="model-status">About 120 MB from <a href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0/onnx"><code>sed-i/ensomi-r2</code></a> on the first visit; later visits read it from this browser's cache. Uses WebGPU for the beat tracker when the browser offers it and WebAssembly threads for the rest. With the model cached, a 3:20 song took about 6 seconds in Chrome on an Apple M5, and about 13 seconds without WebGPU.</p>
+          <p class="status" id="model-status">About 120 MB from <a href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0.1/onnx"><code>sed-i/ensomi-r2</code></a> on the first visit; later visits read it from this browser's cache. Uses WebGPU for the beat tracker when the browser offers it and WebAssembly threads for the rest. With the model cached, a 3:20 song took about 6 seconds in Chrome on an Apple M5, and about 13 seconds without WebGPU.</p>
         </div>
         <div class="panel">
           <h3><span class="step-num">2</span>Song</h3>
@@ -175,9 +175,9 @@
       <p class="prose" style="margin-top: var(--s4)">What comes out is a complete osu!mania 4K chart, made in your browser, that you can watch against the music and open in osu!.</p>
       <p class="prose">R2 and the rows model were trained on osu!'s ranked and loved 4K charts from 2 to 6 stars. We do not distribute those charts or their audio.</p>
       <div class="actions">
-        <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0">Model on Hugging Face</a>
+        <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0.1">Model on Hugging Face</a>
         <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/main/docs/research/r2_system.md">Read the report</a>
-        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/tree/r2-1.0">Code</a>
+        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/tree/r2-1.0.1">Code</a>
       </div>
     </section>
 
@@ -240,9 +240,9 @@
       <p class="prose">To run the release from the command line (we checked it on macOS with Apple silicon; Linux and CUDA were not run):</p>
 <pre><code>git clone https://github.com/ensomi-labs/ensomi-model.git
 cd ensomi-model
-git checkout --detach r2-1.0
+git checkout --detach r2-1.0.1
 uv sync --python 3.10 --extra mps
-hf download sed-i/ensomi-r2 --revision r2-1.0 --local-dir artifacts/hf-r2
+hf download sed-i/ensomi-r2 --revision r2-1.0.1 --local-dir artifacts/hf-r2
 
 uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
   --model-dir artifacts/hf-r2 --audio /path/to/song.mp3 --star 3.5 \
@@ -252,7 +252,7 @@ uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
   </main>
 
   <footer>
-    <p>ensomi R2, release <code>r2-1.0</code>. <a href="https://huggingface.co/sed-i/ensomi-r2">Model</a> · <a href="https://github.com/ensomi-labs/ensomi-model">Code</a> · <a href="https://github.com/ensomi-labs">ensomi-labs</a></p>
+    <p>ensomi R2, release <code>r2-1.0.1</code>. <a href="https://huggingface.co/sed-i/ensomi-r2">Model</a> · <a href="https://github.com/ensomi-labs/ensomi-model">Code</a> · <a href="https://github.com/ensomi-labs">ensomi-labs</a></p>
     <p>What this page says about R2 follows the R2 report and claims nothing beyond it. R3 is work in progress.</p>
   </footer>
 </div>

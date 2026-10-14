@@ -33,7 +33,6 @@
         <a href="#aim">愿景</a>
         <a href="#r3">R3</a>
         <a href="#run">自己运行</a>
-        <a href="#licences">许可</a>
       </nav>
       <nav class="langs" aria-label="语言">
         <a href="/" hreflang="en" lang="en">English</a>
@@ -174,6 +173,7 @@
         <li><b>编排谱面。</b><span>它从音符分布相似的人类谱面中取得一种风格，比如长条和多押的多少，再安排轨道、单点和长条。这一步还听不到音频。</span></li>
       </ol>
       <p class="prose" style="margin-top: var(--s4)">最后得到的是一张在你浏览器里生成的完整 osu!mania 4K 谱面，可以对着音乐预览，也可以直接在 osu! 里打开。</p>
+      <p class="prose">R2 和行模型使用 osu! 上 2 到 6 星的 Ranked 与 Loved 4K 谱面训练。我们不分发这些谱面及其音频。</p>
       <div class="actions">
         <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0">Hugging Face 上的模型</a>
         <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/main/docs/research/r2_system.md">阅读报告（英文）</a>
@@ -248,18 +248,6 @@ uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
   --model-dir artifacts/hf-r2 --audio /path/to/song.mp3 --star 3.5 \
   --title "Song title" --artist "Artist" --seed 0 --out artifacts/my-chart.osz</code></pre>
       <p class="prose small muted">首次运行还会从作者处下载 BeatThis 的检查点（81 MB）。解码 WAV 以外的音频需要 ffmpeg。<code>--help</code> 会列出所有可用的请求。完整说明见 <a href="https://huggingface.co/sed-i/ensomi-r2">Hugging Face 模型卡</a>（英文）。</p>
-    </section>
-
-    <section id="licences">
-      <h2>许可</h2>
-      <div class="prose">
-        <p>模型文件以及 Hugging Face 仓库中的其余内容采用 <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> 许可：可以在署名的前提下使用、分享和改编，但不得用于商业用途，改编作品须以相同许可分享。例外是 BeatThis（CPJKU）：它的 ONNX 导出（<code>onnx/beatthis.onnx</code>）和前端数组（<code>onnx/beatthis-mel-filter.bin</code>、<code>onnx/beatthis-hann-window.bin</code>）保留 BeatThis 的 <a href="https://huggingface.co/sed-i/ensomi-r2/blob/r2-1.0/onnx/BeatThis-LICENSE.txt">MIT 许可</a>。模型代码采用 AGPL-3.0-only，浏览器运行时采用 Apache-2.0，在浏览器中运行神经网络的 ONNX Runtime Web 采用 MIT，本网站采用 MIT。具体条款以各许可的正文为准。</p>
-        <div id="notices" hidden>
-          <p>你加载的模型所附带的许可声明：</p>
-          <div id="notice-list"></div>
-        </div>
-        <p>R2 和行模型使用 osu! 上 2 到 6 星的 Ranked 与 Loved 4K 谱面训练。我们不分发这些谱面及其音频。</p>
-      </div>
     </section>
   </main>
 

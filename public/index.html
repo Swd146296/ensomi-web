@@ -33,7 +33,6 @@
         <a href="#aim">Vision</a>
         <a href="#r3">R3</a>
         <a href="#run">Run it</a>
-        <a href="#licences">Licences</a>
       </nav>
       <nav class="langs" aria-label="Language">
         <a href="/" hreflang="en" lang="en" aria-current="page">English</a>
@@ -174,6 +173,7 @@
         <li><b>It arranges the chart.</b><span>It takes a character, such as how many long notes and chords, from human charts whose notes fall in a similar way, then lays out lanes, taps and long notes. This step does not hear the audio yet.</span></li>
       </ol>
       <p class="prose" style="margin-top: var(--s4)">What comes out is a complete osu!mania 4K chart, made in your browser, that you can watch against the music and open in osu!.</p>
+      <p class="prose">R2 and the rows model were trained on osu!'s ranked and loved 4K charts from 2 to 6 stars. We do not distribute those charts or their audio.</p>
       <div class="actions">
         <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0">Model on Hugging Face</a>
         <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/main/docs/research/r2_system.md">Read the report</a>
@@ -248,18 +248,6 @@ uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
   --model-dir artifacts/hf-r2 --audio /path/to/song.mp3 --star 3.5 \
   --title "Song title" --artist "Artist" --seed 0 --out artifacts/my-chart.osz</code></pre>
       <p class="prose small muted">The first run also downloads BeatThis's checkpoint (81 MB) from its authors. Decoding audio other than WAV needs ffmpeg. <code>--help</code> lists every request. Full instructions are on the <a href="https://huggingface.co/sed-i/ensomi-r2">Hugging Face card</a>.</p>
-    </section>
-
-    <section id="licences">
-      <h2>Licences</h2>
-      <div class="prose">
-        <p>The model files and the rest of the Hugging Face repository are <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a>: use, share and adapt them with credit, not commercially, and share adaptations under the same licence. The exception is BeatThis (CPJKU): its ONNX export (<code>onnx/beatthis.onnx</code>) and front-end arrays (<code>onnx/beatthis-mel-filter.bin</code>, <code>onnx/beatthis-hann-window.bin</code>) keep BeatThis's <a href="https://huggingface.co/sed-i/ensomi-r2/blob/r2-1.0/onnx/BeatThis-LICENSE.txt">MIT licence</a>. The model code is AGPL-3.0-only, the browser runtime is Apache-2.0, ONNX Runtime Web, which runs the networks in your browser, is MIT, and this site is MIT.</p>
-        <div id="notices" hidden>
-          <p>The licence notices that came with the model you loaded:</p>
-          <div id="notice-list"></div>
-        </div>
-        <p>R2 and the rows model were trained on osu!'s ranked and loved 4K charts from 2 to 6 stars. We do not distribute those charts or their audio.</p>
-      </div>
     </section>
   </main>
 

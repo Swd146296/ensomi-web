@@ -16,8 +16,7 @@ time when the first arrangement missed the star's difficulty target, so their ch
   resampler tables copied to `public/resampler/` (both by `npm run build:site`), since bundling moves the module away
   from the package's own files. The model's files come through the Cache API (`cachedSource`), which rejects an
   HTTP 404 with `code` `'ENOENT'` as the package's own sources do, so a model without `ensomi-package.json` loads from
-  its `runtime.json`. With the manifest the runtime checks every file's SHA-256. The page shows `models.notices`,
-  BeatThis's MIT licence, under its licences.
+  its `runtime.json`. With the manifest the runtime checks every file's SHA-256.
 - By default `site/app.ts` decodes the song with the package's `decodeAudio`: WebAudio decodes it at 24000 and
   22050 Hz, and the worker passes both streams to `prepare`, so the core converts no rate and reads no resampler
   table. WebAudio's resampler is not the Python release's, which moves the beat grid by up to 1.3 ms against the

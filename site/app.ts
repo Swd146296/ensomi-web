@@ -99,7 +99,7 @@ function onFile(data: { path: string; loaded: number; size: number; cached: bool
         : t.downloading(mb(loaded), mb(size));
 }
 
-function onLoaded(data: { capabilities: ModelCapabilities; notices: { path: string; text: string }[]; provider: string; threads: number; seconds: number }) {
+function onLoaded(data: { capabilities: ModelCapabilities; provider: string; threads: number; seconds: number }) {
     caps = data.capabilities;
     provider = data.provider;
     threads = data.threads;
@@ -110,22 +110,9 @@ function onLoaded(data: { capabilities: ModelCapabilities; notices: { path: stri
     const star = field('star');
     star.min = String(caps.min_star);
     star.max = String(Math.round((caps.max_star_exclusive - 0.1) * 10) / 10);
-    showNotices(data.notices);
     renderSections();
     startPrepare();
     update();
-}
-
-/** The licence notices that came with the model, BeatThis's MIT licence, under the page's licences. */
-function showNotices(notices: { path: string; text: string }[]) {
-    $('notice-list').replaceChildren(...notices.flatMap(({ path, text }) => {
-        const name = document.createElement('p'), code = document.createElement('code'), pre = document.createElement('pre');
-        code.textContent = path;
-        name.append(code);
-        pre.textContent = text;
-        return [name, pre];
-    }));
-    $('notices').hidden = !notices.length;
 }
 
 function onError(data: { during: string; id?: number; message: string }) {

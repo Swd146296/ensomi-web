@@ -32,4 +32,4 @@ npm run serve:site -- 8080 ../ensomi-model/artifacts/release-r2/bulk/hf/ensomi-r
 
 ## Licences
 
-The site's code and content are MIT (`LICENSE`, copyright Ensomi Labs). `@ensomi/runtime` is Apache-2.0 under its own licence, shipped in its npm package, and so are the runtime's checks and browser tests in `packages/runtime/` (`packages/runtime/LICENSE`). ONNX Runtime Web is MIT. The model weights are CC BY-NC-SA 4.0, as the page states; BeatThis's ONNX export and front-end arrays keep its MIT licence (`onnx/BeatThis-LICENSE.txt` in the model repository).
+The site's code and content are MIT (`LICENSE`, copyright Ensomi Labs). `@ensomi/runtime` is Apache-2.0 under its own licence, shipped in its npm package, and so are the runtime's checks and browser tests in `packages/runtime/` (`packages/runtime/LICENSE`). ONNX Runtime Web is MIT. The model's licence is on its [Hugging Face card](https://huggingface.co/sed-i/ensomi-r2).

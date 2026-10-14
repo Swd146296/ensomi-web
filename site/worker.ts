@@ -99,7 +99,7 @@ onmessage = async ({ data }: MessageEvent) => {
                     backend = 'wasm';
                     models = await load(backend);
                 }
-                post({ type: 'loaded', capabilities: models.capabilities, notices: models.notices, provider: backend, threads: threads(backend), seconds: (performance.now() - start) / 1000 });
+                post({ type: 'loaded', capabilities: models.capabilities, provider: backend, threads: threads(backend), seconds: (performance.now() - start) / 1000 });
             });
         }
         else if (data.type === 'prepare') {

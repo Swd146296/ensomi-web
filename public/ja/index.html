@@ -33,7 +33,6 @@
         <a href="#aim">ビジョン</a>
         <a href="#r3">R3</a>
         <a href="#run">自分で動かす</a>
-        <a href="#licences">ライセンス</a>
       </nav>
       <nav class="langs" aria-label="言語">
         <a href="/" hreflang="en" lang="en">English</a>
@@ -174,6 +173,7 @@
         <li><b>譜面を配置する。</b><span>ノーツの置かれ方が似ている人間の譜面から、ロングノーツや同時押しの多さといったキャラクターを受け取り、レーン・通常ノーツ・ロングノーツを配置します。この段階ではまだ音声を聴いていません。</span></li>
       </ol>
       <p class="prose" style="margin-top: var(--s4)">できあがるのは、ブラウザの中で作られた完全な osu!mania 4K 譜面です。音楽に合わせて流れを確認でき、そのまま osu! で開けます。</p>
+      <p class="prose">R2 と行モデルは、osu! の Ranked と Loved の 4K 譜面（★2〜6）で学習しました。それらの譜面や音声は配布していません。</p>
       <div class="actions">
         <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0">Hugging Face のモデル</a>
         <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/main/docs/research/r2_system.md">レポートを読む（英語）</a>
@@ -248,18 +248,6 @@ uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
   --model-dir artifacts/hf-r2 --audio /path/to/song.mp3 --star 3.5 \
   --title "Song title" --artist "Artist" --seed 0 --out artifacts/my-chart.osz</code></pre>
       <p class="prose small muted">初回の実行では、BeatThis のチェックポイント（81 MB）も作者の配布元からダウンロードします。WAV 以外の音声のデコードには ffmpeg が必要です。<code>--help</code> で指定できる項目がすべて表示されます。詳しい手順は <a href="https://huggingface.co/sed-i/ensomi-r2">Hugging Face のモデルカード</a>（英語）にあります。</p>
-    </section>
-
-    <section id="licences">
-      <h2>ライセンス</h2>
-      <div class="prose">
-        <p>モデルファイルと Hugging Face リポジトリのその他の内容は <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> です。クレジットを表示すれば非営利の範囲で利用・共有・改変でき、改変したものは同じライセンスで共有する必要があります。例外は BeatThis（CPJKU）で、その ONNX エクスポート（<code>onnx/beatthis.onnx</code>）とフロントエンドの配列（<code>onnx/beatthis-mel-filter.bin</code>、<code>onnx/beatthis-hann-window.bin</code>）は BeatThis の <a href="https://huggingface.co/sed-i/ensomi-r2/blob/r2-1.0/onnx/BeatThis-LICENSE.txt">MIT ライセンス</a>のままです。モデルのコードは AGPL-3.0-only、ブラウザ用ランタイムは Apache-2.0、ブラウザでニューラルネットワークを動かす ONNX Runtime Web は MIT、このサイトは MIT です。正式な条件は各ライセンスの本文に従います。</p>
-        <div id="notices" hidden>
-          <p>読み込んだモデルに含まれていたライセンス表記：</p>
-          <div id="notice-list"></div>
-        </div>
-        <p>R2 と行モデルは、osu! の Ranked と Loved の 4K 譜面（★2〜6）で学習しました。それらの譜面や音声は配布していません。</p>
-      </div>
     </section>
   </main>
 

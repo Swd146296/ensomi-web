@@ -29,8 +29,10 @@
       <a class="brand" href="/"><img src="/mark.png" width="36" height="36" alt="">ensomi</a>
       <nav class="page-nav" aria-label="Sections">
         <a href="#generate" class="desktop-only">Generate</a>
-        <a href="#r2">R2</a>
+        <a href="#community">Community</a>
+        <a href="#why">Why</a>
         <a href="#aim">Vision</a>
+        <a href="#r2">R2</a>
         <a href="#r3">R3</a>
         <a href="#run">Run it</a>
       </nav>
@@ -156,28 +158,20 @@
       <audio id="audio" preload="auto"></audio>
     </section>
 
+    <section id="community" class="community" aria-labelledby="community-title">
+      <h2 id="community-title">Join the community</h2>
+      <p>Want to share feedback or suggestions after playing? We’d love to hear from you.</p>
+      <div class="community-links">
+        <a class="btn primary" href="https://discord.gg/eTmsMWTxwZ" target="_blank" rel="noopener noreferrer">Join us on Discord</a>
+        <a class="btn primary" href="https://qm.qq.com/q/RAW3lq8QE0" target="_blank" rel="noopener noreferrer">Join QQ group <bdi>1130614129</bdi></a>
+      </div>
+    </section>
+
     <section id="why">
       <h2>Why we are building ensomi</h2>
       <div class="prose">
         <p>Most of the time, music is something we listen to. A rhythm game lets you step inside a song: your hands follow the beat, and listening turns into playing. But a song becomes playable only after someone charts it by hand, note by note, and most of the music in your life never gets a chart.</p>
         <p>We want to change that. ensomi learns from charts that mappers have made and writes new ones from the audio, so that the music you love, and the music already around you, can become something you play.</p>
-      </div>
-    </section>
-
-    <section id="r2">
-      <h2>R2: from a song to a chart you can play</h2>
-      <p class="prose">R2 is our first publicly playable release. It works from the audio alone, and between your song and your chart, three things happen.</p>
-      <ol class="steps">
-        <li><b>It finds the beat.</b><span>R2 listens for the beats, then lines each tempo section up with where the song's sounds begin.</span></li>
-        <li><b>It chooses where notes fall.</b><span>Beat by beat, it decides where notes start, from what it hears.</span></li>
-        <li><b>It arranges the chart.</b><span>It takes a character, such as how many long notes and chords, from human charts whose notes fall in a similar way, then lays out lanes, taps and long notes. This step does not hear the audio yet.</span></li>
-      </ol>
-      <p class="prose" style="margin-top: var(--s4)">What comes out is a complete osu!mania 4K chart, made in your browser, that you can watch against the music and open in osu!.</p>
-      <p class="prose">R2 and the rows model were trained on osu!'s ranked and loved 4K charts from 2 to 6 stars. We do not distribute those charts or their audio.</p>
-      <div class="actions">
-        <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0.1">Model on Hugging Face</a>
-        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/main/docs/research/r2_system.md">Read the report</a>
-        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/tree/r2-1.0.1">Code</a>
       </div>
     </section>
 
@@ -207,6 +201,23 @@
         </div>
       </div>
       <p class="prose" style="margin-top: var(--s4)">We are not there yet. Each moment needs charts that are playable at the difficulty you ask for, follow the music, keep one character through a whole song and answer what you ask. R2 is our first step: a whole song, charted while you wait, and you can already ask for a style in one part of it. It does not yet play along in real time, change a chart while someone plays it, or rework one passage of an existing chart.</p>
+    </section>
+
+    <section id="r2">
+      <h2>R2: from a song to a chart you can play</h2>
+      <p class="prose">R2 is our first publicly playable release. It works from the audio alone, and between your song and your chart, three things happen.</p>
+      <ol class="steps">
+        <li><b>It finds the beat.</b><span>R2 listens for the beats, then lines each tempo section up with where the song's sounds begin.</span></li>
+        <li><b>It chooses where notes fall.</b><span>Beat by beat, it decides where notes start, from what it hears.</span></li>
+        <li><b>It arranges the chart.</b><span>It takes a character, such as how many long notes and chords, from human charts whose notes fall in a similar way, then lays out lanes, taps and long notes. This step does not hear the audio yet.</span></li>
+      </ol>
+      <p class="prose" style="margin-top: var(--s4)">What comes out is a complete osu!mania 4K chart, made in your browser, that you can watch against the music and open in osu!.</p>
+      <p class="prose">R2 and the rows model were trained on osu!'s ranked and loved 4K charts from 2 to 6 stars. We do not distribute those charts or their audio.</p>
+      <div class="actions">
+        <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0.1">Model on Hugging Face</a>
+        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/main/docs/research/r2_system.md">Read the report</a>
+        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/tree/r2-1.0.1">Code</a>
+      </div>
     </section>
 
     <section id="r3">

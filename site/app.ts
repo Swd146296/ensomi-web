@@ -437,7 +437,7 @@ function showResult(result: GenerationResult) {
 
 // Inspector controls
 $('play').addEventListener('click', () => player.toggle());
-$('restart').addEventListener('click', () => player.seek(0));
+$('restart').addEventListener('click', () => player.restart());
 // A new result's audio stops playback without a pause event (the media element load algorithm fires emptied instead).
 function showPlaying() {
     const playing = !player.audio.paused;

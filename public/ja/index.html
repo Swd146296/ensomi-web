@@ -29,8 +29,10 @@
       <a class="brand" href="/ja/"><img src="/mark.png" width="36" height="36" alt="">ensomi</a>
       <nav class="page-nav" aria-label="セクション">
         <a href="#generate" class="desktop-only">生成</a>
-        <a href="#r2">R2</a>
+        <a href="#community">コミュニティ</a>
+        <a href="#why">理由</a>
         <a href="#aim">ビジョン</a>
+        <a href="#r2">R2</a>
         <a href="#r3">R3</a>
         <a href="#run">自分で動かす</a>
       </nav>
@@ -156,28 +158,20 @@
       <audio id="audio" preload="auto"></audio>
     </section>
 
+    <section id="community" class="community" aria-labelledby="community-title">
+      <h2 id="community-title">コミュニティに参加</h2>
+      <p>プレイした感想や提案を届けたいですか？ぜひコミュニティに参加してください。</p>
+      <div class="community-links">
+        <a class="btn primary" href="https://discord.gg/eTmsMWTxwZ" target="_blank" rel="noopener noreferrer">Discord に参加</a>
+        <a class="btn primary" href="https://qm.qq.com/q/RAW3lq8QE0" target="_blank" rel="noopener noreferrer">QQ グループに参加 <bdi>1130614129</bdi></a>
+      </div>
+    </section>
+
     <section id="why">
       <h2>ensomi をつくる理由</h2>
       <div class="prose">
         <p>音楽はたいてい、聴くものです。リズムゲームなら、曲の中に入り込めます。手がビートを追いかけ、聴くことが遊ぶことに変わります。けれど、曲が遊べるようになるのは、誰かが一つひとつ手で譜面を作ってから。身の回りの音楽のほとんどには、譜面がありません。</p>
         <p>それを変えたいと考えています。ensomi はマッパーが作った譜面から学び、音声から新しい譜面を書きます。好きな音楽も、すでに身の回りに流れている音楽も、遊べるものにするために。</p>
-      </div>
-    </section>
-
-    <section id="r2">
-      <h2>R2：曲から、遊べる譜面へ</h2>
-      <p class="prose">R2 は、誰でも遊べる私たちの最初のリリースです。音声だけをもとに動き、曲が譜面になるまでに三つのことが起きます。</p>
-      <ol class="steps">
-        <li><b>ビートを見つける。</b><span>R2 はビートを聴き取り、テンポの区間ごとに、曲の音が鳴り始める位置へ合わせます。</span></li>
-        <li><b>ノーツの位置を決める。</b><span>聴こえた音をもとに、一拍ごとにノーツの始まる位置を決めます。</span></li>
-        <li><b>譜面を配置する。</b><span>ノーツの置かれ方が似ている人間の譜面から、ロングノーツや同時押しの多さといったキャラクターを受け取り、レーン・通常ノーツ・ロングノーツを配置します。この段階ではまだ音声を聴いていません。</span></li>
-      </ol>
-      <p class="prose" style="margin-top: var(--s4)">できあがるのは、ブラウザの中で作られた完全な osu!mania 4K 譜面です。音楽に合わせて流れを確認でき、そのまま osu! で開けます。</p>
-      <p class="prose">R2 と行モデルは、osu! の Ranked と Loved の 4K 譜面（★2〜6）で学習しました。それらの譜面や音声は配布していません。</p>
-      <div class="actions">
-        <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0.1">Hugging Face のモデル</a>
-        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/main/docs/research/r2_system.md">レポートを読む（英語）</a>
-        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/tree/r2-1.0.1">コード</a>
       </div>
     </section>
 
@@ -207,6 +201,23 @@
         </div>
       </div>
       <p class="prose" style="margin-top: var(--s4)">まだそこまでは来ていません。どの場面にも、指定した難易度で遊べて、音楽に沿い、曲全体でひとつのキャラクターを保ち、頼んだことに応える譜面が必要です。R2 はその最初の一歩です。待っている間に曲全体の譜面ができ、曲の一部にスタイルを指定することもすでにできます。ただし、音楽とリアルタイムで一緒に流れる譜面、プレイ中に変わる譜面、既存の譜面の一部の作り直しには、まだ対応していません。</p>
+    </section>
+
+    <section id="r2">
+      <h2>R2：曲から、遊べる譜面へ</h2>
+      <p class="prose">R2 は、誰でも遊べる私たちの最初のリリースです。音声だけをもとに動き、曲が譜面になるまでに三つのことが起きます。</p>
+      <ol class="steps">
+        <li><b>ビートを見つける。</b><span>R2 はビートを聴き取り、テンポの区間ごとに、曲の音が鳴り始める位置へ合わせます。</span></li>
+        <li><b>ノーツの位置を決める。</b><span>聴こえた音をもとに、一拍ごとにノーツの始まる位置を決めます。</span></li>
+        <li><b>譜面を配置する。</b><span>ノーツの置かれ方が似ている人間の譜面から、ロングノーツや同時押しの多さといったキャラクターを受け取り、レーン・通常ノーツ・ロングノーツを配置します。この段階ではまだ音声を聴いていません。</span></li>
+      </ol>
+      <p class="prose" style="margin-top: var(--s4)">できあがるのは、ブラウザの中で作られた完全な osu!mania 4K 譜面です。音楽に合わせて流れを確認でき、そのまま osu! で開けます。</p>
+      <p class="prose">R2 と行モデルは、osu! の Ranked と Loved の 4K 譜面（★2〜6）で学習しました。それらの譜面や音声は配布していません。</p>
+      <div class="actions">
+        <a class="btn primary" href="https://huggingface.co/sed-i/ensomi-r2/tree/r2-1.0.1">Hugging Face のモデル</a>
+        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/blob/main/docs/research/r2_system.md">レポートを読む（英語）</a>
+        <a class="btn" href="https://github.com/ensomi-labs/ensomi-model/tree/r2-1.0.1">コード</a>
+      </div>
     </section>
 
     <section id="r3">

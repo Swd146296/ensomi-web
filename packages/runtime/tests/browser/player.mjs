@@ -25,6 +25,12 @@ export async function playerChecks(page,out){
    }
   });
  });
+ const preview=await page.evaluate(()=>{
+  const chart=__test.results.at(-1).chart,first=chart.objects[0]?.start_ms,canvas=document.querySelector('#lanes'),speed=Number(document.querySelector('#speeds [aria-pressed="true"]').textContent);
+  const at=first===undefined?0:first-.82*canvas.clientHeight/speed*1000,expected=at>=3000?at:0,actual=document.querySelector('#audio').currentTime*1000;
+  return{firstNoteMs:first??null,height:canvas.clientHeight,speed,expectedMs:expected,actualMs:actual,errorMs:actual-expected,pass:Math.abs(actual-expected)<50};
+ });
+ result.previewStart=preview;
  function summary(samples){const pct=(v,q)=>{v=[...v].sort((a,b)=>a-b);return v[Math.min(v.length-1,Math.floor(v.length*q))]};const intervals=samples.slice(1).map((s,i)=>s.frame-samples[i].frame),drifts=samples.map(s=>Math.abs(s.driftAfter));return{samples:samples.length,wallSeconds:(samples.at(-1).frame-samples[0].frame)/1000,fps:1000*(samples.length-1)/(samples.at(-1).frame-samples[0].frame),intervalMedian:pct(intervals,.5),intervalP95:pct(intervals,.95),intervalMax:Math.max(...intervals),drawTimeMedian:pct(samples.map(s=>s.cpuMs),.5),drawTimeP95:pct(samples.map(s=>s.cpuMs),.95),maxDriftMs:Math.max(...drifts),medianDriftMs:pct(drifts,.5),overOneMedianFrame:drifts.filter(x=>x>pct(intervals,.5)).length,first:samples[0],last:samples.at(-1)};}
  result.playback={};
  for(const [rate,duration] of [[1,60],[.5,60],[1.5,60]]){

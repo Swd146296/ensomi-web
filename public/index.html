@@ -29,12 +29,11 @@
       <a class="brand" href="/"><img src="/mark.png" width="36" height="36" alt="">ensomi</a>
       <nav class="page-nav" aria-label="Sections">
         <a href="#generate" class="desktop-only">Generate</a>
-        <a href="#community">Community</a>
-        <a href="#why">Why</a>
         <a href="#aim">Vision</a>
         <a href="#r2">R2</a>
         <a href="#r3">R3</a>
         <a href="#run">Run it</a>
+        <a href="#community">Community</a>
       </nav>
       <nav class="langs" aria-label="Language">
         <a href="/" hreflang="en" lang="en" aria-current="page">English</a>
@@ -158,15 +157,6 @@
       <audio id="audio" preload="auto"></audio>
     </section>
 
-    <section id="community" class="community" aria-labelledby="community-title">
-      <h2 id="community-title">Join the community</h2>
-      <p>Want to share feedback or suggestions after playing? We’d love to hear from you.</p>
-      <div class="community-links">
-        <a class="btn primary" href="https://discord.gg/eTmsMWTxwZ" target="_blank" rel="noopener noreferrer">Join us on Discord</a>
-        <a class="btn primary" href="https://qm.qq.com/q/RAW3lq8QE0" target="_blank" rel="noopener noreferrer">Join QQ group <bdi>1130614129</bdi></a>
-      </div>
-    </section>
-
     <section id="why">
       <h2>Why we are building ensomi</h2>
       <div class="prose">
@@ -222,7 +212,6 @@
 
     <section id="r3">
       <h2>Next: R3</h2>
-      <p class="prose">R2 is our first publicly playable release, and it is a start.</p>
       <p class="prose">We are now building R3, the next system. Like R2, it spans timing, head rows (where notes fall) and choreography (how they are arranged). It goes after what R2 taught us, in this order.</p>
       <ol class="aims">
         <li>
@@ -259,6 +248,18 @@ uv run --python 3.10 --extra mps python -m ensomi_model.system.make \
   --model-dir artifacts/hf-r2 --audio /path/to/song.mp3 --star 3.5 \
   --title "Song title" --artist "Artist" --seed 0 --out artifacts/my-chart.osz</code></pre>
       <p class="prose small muted">The first run also downloads BeatThis's checkpoint (81 MB) from its authors. Decoding audio other than WAV needs ffmpeg. <code>--help</code> lists every request. Full instructions are on the <a href="https://huggingface.co/sed-i/ensomi-r2">Hugging Face card</a>.</p>
+    </section>
+
+    <section id="community" aria-labelledby="community-title">
+      <h2 id="community-title">Join the community!</h2>
+      <p>Want to share feedback or suggestions after playing? We'd love to hear from you.</p>
+      <div class="community-links">
+        <a class="icon-link discord" href="https://discord.gg/eTmsMWTxwZ" aria-label="Join the ensomi community on Discord" title="Discord" target="_blank" rel="noopener noreferrer"></a>
+        <span class="qq-community">
+          <a class="icon-link qq" href="https://qm.qq.com/q/RAW3lq8QE0" aria-label="Join the ensomi QQ group" title="QQ" target="_blank" rel="noopener noreferrer"></a>
+          <bdi>1130614129</bdi>
+        </span>
+      </div>
     </section>
   </main>
 

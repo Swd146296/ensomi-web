@@ -6,7 +6,8 @@
  *   shows Prepare and Timing done and the status asks for the conditions.
  * - Generate (star 3.5, seed 1) sends `generate` and no new `prepare`. The chart is compared with the same song, star
  *   and seed in page-<backend>-local.json when that report exists.
- * - Generate again while the result plays: the audio stops at 0 and the button reads Play again.
+ * - A newly generated result starts at its visual preview time, or 0 when that would skip less than 3 s.
+ * - Generate again while the result plays: the audio stops at that preview time and the button reads Play again.
  * - Exact timing on prepares again at the song's rate; that result shows the Timing fact and the Exact-timing decode.
  * - Adventure chosen and Generate pressed before its timing is done: the generation waits for it.
  */
@@ -50,6 +51,12 @@ const state = () => page.evaluate(() => ({
     play: document.querySelector('#play').textContent, pressed: document.querySelector('#play').getAttribute('aria-pressed'),
     paused: document.querySelector('#audio').paused, time: document.querySelector('#audio').currentTime,
 }));
+const previewStartMs = () => page.evaluate(() => {
+    const chart = __test.results.at(-1)?.chart, first = chart?.objects[0]?.start_ms;
+    const lanes = document.querySelector('#lanes'), speed = Number(document.querySelector('#speeds [aria-pressed="true"]').textContent);
+    const at = first === undefined ? 0 : first - .82 * lanes.clientHeight / speed * 1000;
+    return at >= 3000 ? at : 0;
+});
 const count = (list, type) => list.filter(x => x === type).length;
 const phaseClasses = s => s.phases.map(p => p.split(':')[0]);
 async function chooseSong(id, ext) {
@@ -83,10 +90,13 @@ try {
     await page.locator('#star').fill('3.5');
     await page.locator('#seed').fill('1');
     const first = await generate();
+    const initialPreviewMs = await previewStartMs();
+    await page.waitForFunction(expected => Math.abs(document.querySelector('#audio').currentTime * 1000 - expected) < 50, initialPreviewMs, { timeout: 5000 });
     s = await state();
     const firstHash = first && sha(first.chart), detail = first && JSON.parse(first.receipt);
     check('Generate uses the prepared timing', Boolean(first) && count(s.sent, 'prepare') === 1 && count(s.sent, 'generate') === 1 && phaseClasses(s).every(c => c === 'done')
         && detail.seconds.beatthis === undefined && detail.seconds.rows >= 0, { ...s, receiptSeconds: detail?.seconds });
+    check('new result starts at visual preview time', Math.abs(s.time * 1000 - initialPreviewMs) < 50, { expectedMs: initialPreviewMs, actualMs: s.time * 1000 });
     const earlier = await readFile(join(out, `page-${backend}-local.json`), 'utf8').then(JSON.parse, () => undefined);
     const reference = earlier?.runs.find(r => r.song === 'catch-the-moment' && r.seed === 1 && !r.section && r.star === 3.5);
     report.chart = { sha256: firstHash, objects: first?.chart.objects.length, reference: reference && { sha256: reference.chartSha256, runtime: reference.detail?.runtime?.version, started: earlier.started } };
@@ -97,9 +107,11 @@ try {
     s = await state();
     check('playing before regenerating', !s.paused && s.play === 'Pause' && s.pressed === 'true', s);
     const again = await generate();
+    const regeneratedPreviewMs = await previewStartMs();
     const stopped = await page.waitForFunction(() => document.querySelector('#play').textContent === 'Play', null, { timeout: 2000 }).then(() => true, () => false);
     s = await state();
-    check('regenerating while playing stops at 0 and shows Play', stopped && s.paused && s.time === 0 && s.pressed === 'false' && count(s.sent, 'prepare') === 1 && again && sha(again.chart) === firstHash, s);
+    check('regenerating while playing stops at the preview time and shows Play', stopped && s.paused && Math.abs(s.time * 1000 - regeneratedPreviewMs) < 50 && s.pressed === 'false' && count(s.sent, 'prepare') === 1 && again && sha(again.chart) === firstHash,
+        { ...s, expectedMs: regeneratedPreviewMs, actualMs: s.time * 1000 });
     await page.locator('#play').click();
     await page.waitForFunction(() => document.querySelector('#audio').currentTime > 0.2, null, { timeout: 10000 });
     s = await state();

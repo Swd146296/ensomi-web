@@ -122,10 +122,10 @@ p { margin: 0 0 var(--s3); }
 .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 
 .actions { display: flex; flex-wrap: wrap; gap: var(--s2) var(--s3); margin-top: var(--s4); }
-.community { margin-top: var(--s6); padding: var(--s4); background: var(--surface); border-radius: var(--radius-soft); }
-.community h2 { margin-bottom: var(--s2); }
-.community p { color: var(--muted); }
 .community-links { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s2) var(--s3); }
+.icon-link.discord { --icon: url(/img/discord.svg); }
+.icon-link.qq { --icon: url(/img/qq.svg); }
+.qq-community { display: inline-flex; align-items: center; gap: var(--s1); color: var(--muted); font-variant-numeric: tabular-nums; }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s2); padding: 0.62rem 1.2rem; border-radius: var(--radius-pill); border: 1.5px solid var(--lavender); background: transparent; color: var(--lavender); text-decoration: none; font: 600 var(--step--1)/1.2 var(--font-text); cursor: pointer; }
 .btn:hover { background: color-mix(in srgb, var(--lavender) 12%, transparent); }
 .btn.primary { background: var(--action); border-color: transparent; color: var(--action-ink); }
@@ -255,6 +255,7 @@ footer p { margin-bottom: var(--s2); }
   /* the brand and the two icons share the first row; the sections and the languages follow */
   .top .icons { order: 1; margin-left: auto; }
   .top .page-nav { order: 2; margin-left: 0; }
+  .top .page-nav { column-gap: var(--s3); }
   .top .langs { order: 3; margin-left: auto; padding-left: 0; border-left: 0; }
   .hero h1 { font-size: clamp(2.1rem, 1.2rem + 4.5vw, 3.4rem); }
   .hero-icon { display: none; }
